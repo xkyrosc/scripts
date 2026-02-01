@@ -8,7 +8,7 @@ local RunService = game:GetService("RunService")
 
 -- Main GUI
 local gui = Instance.new("ScreenGui")
-gui.Name = "AutoHatchGUI"
+gui.Name = "Zyrtec Hub"
 gui.ResetOnSpawn = false
 gui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
@@ -94,7 +94,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0.12, 0)
 title.Position = UDim2.new(0, 0, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "AUTO HATCHER"
+title.Text = "Zyrtec Hub"
 title.Font = Enum.Font.SciFi
 title.TextColor3 = Color3.fromRGB(0, 200, 255)
 title.TextSize = 18
