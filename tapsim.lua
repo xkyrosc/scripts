@@ -468,7 +468,8 @@ local MainState = {
     InfiniteJump = false,
     WalkSpeed = 30,
     OriginalWalkSpeed = 16,
-    IsAdjustingSpeed = false
+    IsAdjustingSpeed = false,
+    SpeedMonitorActive = true  -- New state for speed monitor
 }
 
 local EggState = {
@@ -524,14 +525,13 @@ local function toggleInfiniteJump(enabled)
 end
 
 -- Speed Changer Functionality
-local speedConnection
 local function updateSpeed(value)
     value = math.floor(math.clamp(value, 16, 100))
     MainState.WalkSpeed = value
     speedLabel.Text = "Walk Speed: " .. value
     speedValueDisplay.Text = tostring(value)
     
-    -- Apply speed to character
+    -- Apply speed to character immediately
     local character = Players.LocalPlayer.Character
     if character then
         local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -547,6 +547,35 @@ local function updateSpeed(value)
         speedValueDisplay.BackgroundColor3 = Color3.fromRGB(60, 60, 40)
     else
         speedValueDisplay.BackgroundColor3 = Color3.fromRGB(60, 40, 40)
+    end
+end
+
+-- Continuous speed monitor to prevent reset
+local speedMonitorThread
+local function startSpeedMonitor()
+    if speedMonitorThread then return end
+    
+    MainState.SpeedMonitorActive = true
+    speedMonitorThread = task.spawn(function()
+        while MainState.SpeedMonitorActive do
+            local character = Players.LocalPlayer.Character
+            if character then
+                local humanoid = character:FindFirstChildOfClass("Humanoid")
+                if humanoid and humanoid.WalkSpeed ~= MainState.WalkSpeed then
+                    -- Speed was reset by the game, reapply it
+                    humanoid.WalkSpeed = MainState.WalkSpeed
+                end
+            end
+            task.wait(0.1)  -- Check every 0.1 seconds
+        end
+    end)
+end
+
+local function stopSpeedMonitor()
+    MainState.SpeedMonitorActive = false
+    if speedMonitorThread then
+        task.cancel(speedMonitorThread)
+        speedMonitorThread = nil
     end
 end
 
@@ -1149,6 +1178,7 @@ end)
 updateAmountButtons()
 updateSpeed(30)  -- Set default speed to 30
 monitorCharacter()  -- Start monitoring character for speed updates
+startSpeedMonitor()  -- Start continuous speed monitor
 
 -- Cleanup on character change
 Players.LocalPlayer.CharacterAdded:Connect(function()
@@ -1178,6 +1208,16 @@ Players.LocalPlayer.CharacterAdded:Connect(function()
                 humanoid.WalkSpeed = MainState.WalkSpeed
             end
         end
+    end
+end)
+
+-- Cleanup when player leaves
+Players.LocalPlayer:GetPropertyChangedSignal("Parent"):Connect(function()
+    if Players.LocalPlayer.Parent == nil then
+        stopSpeedMonitor()
+        stopAutoClicker()
+        stopAutoHatch()
+        toggleInfiniteJump(false)
     end
 end)
 
