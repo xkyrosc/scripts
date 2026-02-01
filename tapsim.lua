@@ -31,7 +31,7 @@ toggleCorner.Parent = toggleButton
 
 -- Main Frame
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0.3, 0, 0.5, 0)
+mainFrame.Size = UDim2.new(0.35, 0, 0.6, 0)  -- Slightly larger for more content
 mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
@@ -102,6 +102,11 @@ title.Parent = mainFrame
 
 -- Tabs
 local tabs = {
+    Main = {
+        Name = "Main",
+        Color = Color3.fromRGB(255, 100, 100),
+        Content = {}
+    },
     Eggs = {
         Name = "Eggs",
         Color = Color3.fromRGB(0, 150, 255),
@@ -114,19 +119,19 @@ local tabs = {
     }
 }
 
-local currentTab = "Eggs"
+local currentTab = "Main"
 local tabButtons = {}
 
 -- Create tab buttons
 for tabName, tabInfo in pairs(tabs) do
     local tabButton = Instance.new("TextButton")
-    tabButton.Size = UDim2.new(0.45, 0, 0.9, 0)
+    tabButton.Size = UDim2.new(0.3, 0, 0.9, 0)  -- Smaller for 3 tabs
     tabButton.BackgroundColor3 = tabInfo.Color
     tabButton.BackgroundTransparency = 0.5
     tabButton.Text = tabInfo.Name
     tabButton.Font = Enum.Font.SciFi
     tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    tabButton.TextSize = 14
+    tabButton.TextSize = 13  -- Slightly smaller for 3 tabs
     tabButton.AutoButtonColor = false
     tabButton.Parent = tabButtonsFrame
     
@@ -162,6 +167,102 @@ for tabName, tabInfo in pairs(tabs) do
     
     tabButtons[tabName] = tabButton
 end
+
+-- Create Main Tab Content
+local mainTabContainer = Instance.new("Frame")
+mainTabContainer.Size = UDim2.new(1, 0, 1, 0)
+mainTabContainer.BackgroundTransparency = 1
+mainTabContainer.Visible = currentTab == "Main"
+mainTabContainer.Parent = tabContentFrame
+
+tabs.Main.Content.Container = mainTabContainer
+
+-- Main Tab Title
+local mainTitle = Instance.new("TextLabel")
+mainTitle.Size = UDim2.new(0.8, 0, 0.1, 0)
+mainTitle.Position = UDim2.new(0.1, 0, 0.05, 0)
+mainTitle.BackgroundTransparency = 1
+mainTitle.Text = "MAIN"
+mainTitle.Font = Enum.Font.SciFi
+mainTitle.TextColor3 = Color3.fromRGB(255, 100, 100)
+mainTitle.TextSize = 18
+mainTitle.Parent = mainTabContainer
+
+-- Infinite Jump Toggle
+local infiniteJumpToggle = Instance.new("TextButton")
+infiniteJumpToggle.Name = "InfiniteJumpToggle"
+infiniteJumpToggle.Size = UDim2.new(0.8, 0, 0.12, 0)
+infiniteJumpToggle.Position = UDim2.new(0.1, 0, 0.2, 0)
+infiniteJumpToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+infiniteJumpToggle.Text = "INFINITE JUMP: OFF"
+infiniteJumpToggle.Font = Enum.Font.SciFi
+infiniteJumpToggle.TextColor3 = Color3.fromRGB(255, 100, 100)
+infiniteJumpToggle.TextSize = 16
+infiniteJumpToggle.Parent = mainTabContainer
+
+local infiniteJumpCorner = Instance.new("UICorner")
+infiniteJumpCorner.CornerRadius = UDim.new(0.2, 0)
+infiniteJumpCorner.Parent = infiniteJumpToggle
+
+-- Speed Changer
+local speedFrame = Instance.new("Frame")
+speedFrame.Size = UDim2.new(0.8, 0, 0.2, 0)
+speedFrame.Position = UDim2.new(0.1, 0, 0.38, 0)
+speedFrame.BackgroundTransparency = 1
+speedFrame.Parent = mainTabContainer
+
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Size = UDim2.new(1, 0, 0.4, 0)
+speedLabel.Position = UDim2.new(0, 0, 0, 0)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Text = "Walk Speed: 30"
+speedLabel.Font = Enum.Font.SciFi
+speedLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
+speedLabel.TextSize = 14
+speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+speedLabel.Parent = speedFrame
+
+local speedSlider = Instance.new("Frame")
+speedSlider.Size = UDim2.new(1, 0, 0.4, 0)
+speedSlider.Position = UDim2.new(0, 0, 0.4, 0)
+speedSlider.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+speedSlider.Parent = speedFrame
+
+local speedSliderCorner = Instance.new("UICorner")
+speedSliderCorner.CornerRadius = UDim.new(0.2, 0)
+speedSliderCorner.Parent = speedSlider
+
+local speedFill = Instance.new("Frame")
+speedFill.Size = UDim2.new(1, 0, 1, 0)  -- Full for default 30
+speedFill.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+speedFill.Parent = speedSlider
+
+local speedFillCorner = Instance.new("UICorner")
+speedFillCorner.CornerRadius = UDim.new(0.2, 0)
+speedFillCorner.Parent = speedFill
+
+local speedValue = Instance.new("TextLabel")
+speedValue.Size = UDim2.new(1, 0, 0.6, 0)
+speedValue.Position = UDim2.new(0, 0, 0.4, 0)
+speedValue.BackgroundTransparency = 1
+speedValue.Text = "Drag to adjust (16 - 100)"
+speedValue.Font = Enum.Font.SciFi
+speedValue.TextColor3 = Color3.fromRGB(150, 150, 200)
+speedValue.TextSize = 10
+speedValue.TextXAlignment = Enum.TextXAlignment.Center
+speedValue.Parent = speedFrame
+
+-- Hotkeys Info
+local hotkeysInfo = Instance.new("TextLabel")
+hotkeysInfo.Size = UDim2.new(0.8, 0, 0.25, 0)
+hotkeysInfo.Position = UDim2.new(0.1, 0, 0.65, 0)
+hotkeysInfo.BackgroundTransparency = 1
+hotkeysInfo.Text = "Hotkeys:\nT - Toggle GUI\nF - Auto Clicker\nRightShift - Auto Hatch"
+hotkeysInfo.Font = Enum.Font.SciFi
+hotkeysInfo.TextColor3 = Color3.fromRGB(150, 200, 255)
+hotkeysInfo.TextSize = 12
+hotkeysInfo.TextXAlignment = Enum.TextXAlignment.Left
+hotkeysInfo.Parent = mainTabContainer
 
 -- Create Egg Tab Content
 local eggsTabContainer = Instance.new("Frame")
@@ -329,6 +430,12 @@ toggleButton.Parent = gui
 mainFrame.Parent = gui
 
 -- States
+local MainState = {
+    InfiniteJump = false,
+    WalkSpeed = 30,
+    OriginalWalkSpeed = 16
+}
+
 local EggState = {
     AutoHatch = false,
     SelEgg = nil,
@@ -340,6 +447,112 @@ local ClickerState = {
     AutoClickerRunning = false,
     ClickDelay = 0  -- Instant clicks
 }
+
+-- Infinite Jump Functionality
+local infiniteJumpConnection
+local function toggleInfiniteJump(enabled)
+    MainState.InfiniteJump = enabled
+    
+    if enabled then
+        infiniteJumpConnection = UserInputService.JumpRequest:Connect(function()
+            local character = Players.LocalPlayer.Character
+            if character then
+                local humanoid = character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                end
+            end
+        end)
+        
+        infiniteJumpToggle.Text = "INFINITE JUMP: ON"
+        infiniteJumpToggle.BackgroundColor3 = Color3.fromRGB(80, 40, 40)
+        infiniteJumpToggle.TextColor3 = Color3.fromRGB(255, 150, 150)
+        statusLabel.Text = "Infinite Jump enabled"
+    else
+        if infiniteJumpConnection then
+            infiniteJumpConnection:Disconnect()
+            infiniteJumpConnection = nil
+        end
+        
+        infiniteJumpToggle.Text = "INFINITE JUMP: OFF"
+        infiniteJumpToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+        infiniteJumpToggle.TextColor3 = Color3.fromRGB(255, 100, 100)
+        statusLabel.Text = "Infinite Jump disabled"
+    end
+    
+    task.spawn(function()
+        task.wait(2)
+        if statusLabel.Text:find("Infinite Jump") then
+            statusLabel.Text = ""
+        end
+    end)
+end
+
+-- Speed Changer Functionality
+local speedConnection
+local function updateSpeed(value)
+    MainState.WalkSpeed = value
+    local fillPercent = (value - 16) / 84  -- 16 to 100 range
+    speedFill.Size = UDim2.new(fillPercent, 0, 1, 0)
+    speedLabel.Text = "Walk Speed: " .. math.floor(value)
+    
+    -- Apply speed to character
+    local character = Players.LocalPlayer.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = value
+        end
+    end
+end
+
+-- Monitor character for speed application
+local function monitorCharacter()
+    Players.LocalPlayer.CharacterAdded:Connect(function(character)
+        character:WaitForChild("Humanoid")
+        if MainState.WalkSpeed ~= 16 then
+            task.wait(0.5)  -- Wait a bit for character to load
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = MainState.WalkSpeed
+            end
+        end
+    end)
+end
+
+-- Speed slider functionality
+local isSpeedDragging = false
+speedSlider.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isSpeedDragging = true
+    end
+end)
+
+speedSlider.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isSpeedDragging = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if isSpeedDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local mousePos = UserInputService:GetMouseLocation()
+        local sliderAbsPos = speedSlider.AbsolutePosition
+        local sliderSize = speedSlider.AbsoluteSize.X
+        
+        local relativeX = (mousePos.X - sliderAbsPos.X) / sliderSize
+        relativeX = math.clamp(relativeX, 0, 1)
+        
+        local value = 16 + (relativeX * 84)  -- 16 to 100 range
+        updateSpeed(value)
+        statusLabel.Text = "Speed: " .. math.floor(value)
+    end
+end)
+
+-- Toggle infinite jump
+infiniteJumpToggle.MouseButton1Click:Connect(function()
+    toggleInfiniteJump(not MainState.InfiniteJump)
+end)
 
 -- Get egg list
 local function getEggList()
@@ -369,34 +582,6 @@ local function getEggList()
     
     table.sort(eggNames)
     return eggNames
-end
-
--- Game pass check - Try to check but don't limit the options
-local function getHatchOptions()
-    local options = {1, 3, 8}  -- Always include 8x
-    
-    -- Try to check if user has game pass, but don't hide 8x if they don't
-    local ok, owned = pcall(function()
-        return MarketplaceService:UserOwnsGamePassAsync(Players.LocalPlayer.UserId, 1568018875)
-    end)
-    
-    if ok and owned then
-        statusLabel.Text = "Game Pass: 8x Enabled"
-        statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-        task.wait(2)
-        if statusLabel.Text == "Game Pass: 8x Enabled" then
-            statusLabel.Text = ""
-        end
-    else
-        statusLabel.Text = "Note: 8x may require Game Pass"
-        statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
-        task.wait(2)
-        if statusLabel.Text == "Note: 8x may require Game Pass" then
-            statusLabel.Text = ""
-        end
-    end
-    
-    return options
 end
 
 -- Auto hatch functions
@@ -510,11 +695,11 @@ local function stopAutoClicker()
     end
 end
 
--- Initialize amount buttons - Always show all buttons
+-- Initialize amount buttons - SIMPLIFIED: Always show all buttons
 local function updateAmountButtons()
     for i, btn in ipairs(amountButtons) do
         if amounts[i] then
-            btn.Visible = true
+            btn.Visible = true  -- Always visible
             if amounts[i] == EggState.EggAmt then
                 btn.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
                 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -612,17 +797,12 @@ for i, btn in ipairs(amountButtons) do
         EggState.EggAmt = amounts[i]
         updateAmountButtons()
         
-        if amounts[i] == 8 then
-            statusLabel.Text = "Amount: 8x (May require Game Pass)"
-            statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
-        else
-            statusLabel.Text = "Amount: " .. EggState.EggAmt .. "x"
-            statusLabel.TextColor3 = Color3.fromRGB(0, 200, 255)
-        end
+        statusLabel.Text = "Amount: " .. EggState.EggAmt .. "x"
+        statusLabel.TextColor3 = Color3.fromRGB(0, 200, 255)
         
         task.spawn(function()
             task.wait(2)
-            if statusLabel.Text:find("Amount:") then
+            if statusLabel.Text == "Amount: " .. EggState.EggAmt .. "x" then
                 statusLabel.Text = ""
             end
         end)
@@ -671,12 +851,7 @@ hatchToggle.MouseButton1Click:Connect(function()
         hatchToggle.Text = "AUTO HATCH: ON"
         hatchToggle.TextColor3 = Color3.fromRGB(100, 255, 100)
         hatchToggle.BackgroundColor3 = Color3.fromRGB(40, 80, 40)
-        
-        if EggState.EggAmt == 8 then
-            statusLabel.Text = "Auto hatching 8x: " .. EggState.SelEgg
-        else
-            statusLabel.Text = "Auto hatching: " .. EggState.SelEgg
-        end
+        statusLabel.Text = "Auto hatching: " .. EggState.SelEgg .. " x" .. EggState.EggAmt
         startAutoHatch()
     else
         hatchToggle.Text = "AUTO HATCH: OFF"
@@ -796,6 +971,9 @@ local function setupButtonEffects(button)
         if button == clickerToggle and ClickerState.AutoClickerEnabled then
             return
         end
+        if button == infiniteJumpToggle and MainState.InfiniteJump then
+            return
+        end
         
         TweenService:Create(button, TweenInfo.new(0.2), {
             BackgroundColor3 = Color3.fromRGB(50, 50, 70)
@@ -823,6 +1001,16 @@ local function setupButtonEffects(button)
                     BackgroundColor3 = Color3.fromRGB(60, 60, 80)
                 }):Play()
             end
+        elseif button == infiniteJumpToggle then
+            if MainState.InfiniteJump then
+                TweenService:Create(button, TweenInfo.new(0.2), {
+                    BackgroundColor3 = Color3.fromRGB(80, 40, 40)
+                }):Play()
+            else
+                TweenService:Create(button, TweenInfo.new(0.2), {
+                    BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+                }):Play()
+            end
         else
             TweenService:Create(button, TweenInfo.new(0.2), {
                 BackgroundColor3 = Color3.fromRGB(40, 40, 60)
@@ -834,6 +1022,7 @@ end
 setupButtonEffects(eggDropdown)
 setupButtonEffects(hatchToggle)
 setupButtonEffects(clickerToggle)
+setupButtonEffects(infiniteJumpToggle)
 
 for _, btn in ipairs(amountButtons) do
     setupButtonEffects(btn)
@@ -861,20 +1050,38 @@ end)
 
 -- Initialize
 updateAmountButtons()
-getHatchOptions() -- Check game pass status
+updateSpeed(30)  -- Set default speed to 30
+monitorCharacter()  -- Start monitoring character for speed updates
 
 -- Cleanup on character change
 Players.LocalPlayer.CharacterAdded:Connect(function()
     stopAutoClicker()
     stopAutoHatch()
+    toggleInfiniteJump(false)
+    
     clickerToggle.Text = "AUTO CLICKER: OFF"
     clickerToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
     clickerToggle.TextColor3 = Color3.fromRGB(255, 100, 100)
+    
     hatchToggle.Text = "AUTO HATCH: OFF"
     hatchToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
     hatchToggle.TextColor3 = Color3.fromRGB(255, 100, 100)
+    
     ClickerState.AutoClickerEnabled = false
     EggState.AutoHatch = false
+    MainState.InfiniteJump = false
+    
+    -- Reapply walk speed to new character
+    if MainState.WalkSpeed ~= 16 then
+        task.wait(0.5)
+        local character = Players.LocalPlayer.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = MainState.WalkSpeed
+            end
+        end
+    end
 end)
 
 print("Auto Hatcher GUI loaded!")
@@ -882,6 +1089,8 @@ print("Controls:")
 print("- T: Toggle GUI visibility")
 print("- F: Toggle Auto Clicker")
 print("- RightShift: Toggle Auto Hatch")
+print("- Walk Speed: Default 30 (adjustable 16-100)")
+print("- Infinite Jump: Toggle on/off")
 print("- Click Delay: 0s (Instant clicks)")
-print("- 8x hatch option is always available")
+print("- All hatch amounts available: 1x, 3x, 8x")
 print("- Click hamburger button to slide GUI")
