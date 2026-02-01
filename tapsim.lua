@@ -228,7 +228,7 @@ amountLabel.TextSize = 14
 amountLabel.TextXAlignment = Enum.TextXAlignment.Left
 amountLabel.Parent = amountFrame
 
--- Amount buttons
+-- Amount buttons - Always show 1, 3, 8
 local amounts = {1, 3, 8}
 local amountButtons = {}
 
@@ -371,15 +371,29 @@ local function getEggList()
     return eggNames
 end
 
--- Game pass check
+-- Game pass check - Try to check but don't limit the options
 local function getHatchOptions()
-    local options = {1, 3}
+    local options = {1, 3, 8}  -- Always include 8x
+    
+    -- Try to check if user has game pass, but don't hide 8x if they don't
     local ok, owned = pcall(function()
         return MarketplaceService:UserOwnsGamePassAsync(Players.LocalPlayer.UserId, 1568018875)
     end)
     
     if ok and owned then
-        table.insert(options, 8)
+        statusLabel.Text = "Game Pass: 8x Enabled"
+        statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+        task.wait(2)
+        if statusLabel.Text == "Game Pass: 8x Enabled" then
+            statusLabel.Text = ""
+        end
+    else
+        statusLabel.Text = "Note: 8x may require Game Pass"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+        task.wait(2)
+        if statusLabel.Text == "Note: 8x may require Game Pass" then
+            statusLabel.Text = ""
+        end
     end
     
     return options
@@ -496,22 +510,12 @@ local function stopAutoClicker()
     end
 end
 
--- Initialize amount buttons
+-- Initialize amount buttons - Always show all buttons
 local function updateAmountButtons()
-    local availableAmounts = getHatchOptions()
-    
     for i, btn in ipairs(amountButtons) do
         if amounts[i] then
-            local isAvailable = false
-            for _, amt in ipairs(availableAmounts) do
-                if amounts[i] == amt then
-                    isAvailable = true
-                    break
-                end
-            end
-            
-            btn.Visible = isAvailable
-            if isAvailable and amounts[i] == EggState.EggAmt then
+            btn.Visible = true
+            if amounts[i] == EggState.EggAmt then
                 btn.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
                 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             else
@@ -608,12 +612,17 @@ for i, btn in ipairs(amountButtons) do
         EggState.EggAmt = amounts[i]
         updateAmountButtons()
         
-        statusLabel.Text = "Amount: " .. EggState.EggAmt .. "x"
-        statusLabel.TextColor3 = Color3.fromRGB(0, 200, 255)
+        if amounts[i] == 8 then
+            statusLabel.Text = "Amount: 8x (May require Game Pass)"
+            statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+        else
+            statusLabel.Text = "Amount: " .. EggState.EggAmt .. "x"
+            statusLabel.TextColor3 = Color3.fromRGB(0, 200, 255)
+        end
         
         task.spawn(function()
             task.wait(2)
-            if statusLabel.Text == "Amount: " .. EggState.EggAmt .. "x" then
+            if statusLabel.Text:find("Amount:") then
                 statusLabel.Text = ""
             end
         end)
@@ -662,7 +671,12 @@ hatchToggle.MouseButton1Click:Connect(function()
         hatchToggle.Text = "AUTO HATCH: ON"
         hatchToggle.TextColor3 = Color3.fromRGB(100, 255, 100)
         hatchToggle.BackgroundColor3 = Color3.fromRGB(40, 80, 40)
-        statusLabel.Text = "Auto hatching: " .. EggState.SelEgg
+        
+        if EggState.EggAmt == 8 then
+            statusLabel.Text = "Auto hatching 8x: " .. EggState.SelEgg
+        else
+            statusLabel.Text = "Auto hatching: " .. EggState.SelEgg
+        end
         startAutoHatch()
     else
         hatchToggle.Text = "AUTO HATCH: OFF"
@@ -674,7 +688,7 @@ hatchToggle.MouseButton1Click:Connect(function()
     
     task.spawn(function()
         task.wait(2)
-        if statusLabel.Text == "Auto hatching: " .. EggState.SelEgg or 
+        if statusLabel.Text:find("Auto hatching") or 
            statusLabel.Text == "Auto hatch stopped" then
             statusLabel.Text = ""
         end
@@ -821,6 +835,10 @@ setupButtonEffects(eggDropdown)
 setupButtonEffects(hatchToggle)
 setupButtonEffects(clickerToggle)
 
+for _, btn in ipairs(amountButtons) do
+    setupButtonEffects(btn)
+end
+
 -- Hide GUI with T key
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
@@ -843,6 +861,7 @@ end)
 
 -- Initialize
 updateAmountButtons()
+getHatchOptions() -- Check game pass status
 
 -- Cleanup on character change
 Players.LocalPlayer.CharacterAdded:Connect(function()
@@ -864,4 +883,5 @@ print("- T: Toggle GUI visibility")
 print("- F: Toggle Auto Clicker")
 print("- RightShift: Toggle Auto Hatch")
 print("- Click Delay: 0s (Instant clicks)")
+print("- 8x hatch option is always available")
 print("- Click hamburger button to slide GUI")
