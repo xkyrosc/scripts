@@ -290,7 +290,7 @@ clickerTitle.Parent = clickerTabContainer
 local clickerToggle = Instance.new("TextButton")
 clickerToggle.Name = "ClickerToggle"
 clickerToggle.Size = UDim2.new(0.8, 0, 0.12, 0)
-clickerToggle.Position = UDim2.new(0.1, 0, 0.18, 0)
+clickerToggle.Position = UDim2.new(0.1, 0, 0.2, 0)
 clickerToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
 clickerToggle.Text = "AUTO CLICKER: OFF"
 clickerToggle.Font = Enum.Font.SciFi
@@ -302,53 +302,16 @@ local clickerToggleCorner = Instance.new("UICorner")
 clickerToggleCorner.CornerRadius = UDim.new(0.2, 0)
 clickerToggleCorner.Parent = clickerToggle
 
--- Click Delay Slider
-local clickDelayFrame = Instance.new("Frame")
-clickDelayFrame.Size = UDim2.new(0.8, 0, 0.15, 0)
-clickDelayFrame.Position = UDim2.new(0.1, 0, 0.35, 0)
-clickDelayFrame.BackgroundTransparency = 1
-clickDelayFrame.Parent = clickerTabContainer
-
-local clickDelayLabel = Instance.new("TextLabel")
-clickDelayLabel.Size = UDim2.new(1, 0, 0.4, 0)
-clickDelayLabel.Position = UDim2.new(0, 0, 0, 0)
-clickDelayLabel.BackgroundTransparency = 1
-clickDelayLabel.Text = "Click Delay: 0.1s"
-clickDelayLabel.Font = Enum.Font.SciFi
-clickDelayLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
-clickDelayLabel.TextSize = 14
-clickDelayLabel.TextXAlignment = Enum.TextXAlignment.Left
-clickDelayLabel.Parent = clickDelayFrame
-
-local clickDelaySlider = Instance.new("Frame")
-clickDelaySlider.Size = UDim2.new(1, 0, 0.4, 0)
-clickDelaySlider.Position = UDim2.new(0, 0, 0.4, 0)
-clickDelaySlider.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-clickDelaySlider.Parent = clickDelayFrame
-
-local clickDelaySliderCorner = Instance.new("UICorner")
-clickDelaySliderCorner.CornerRadius = UDim.new(0.2, 0)
-clickDelaySliderCorner.Parent = clickDelaySlider
-
-local clickDelayFill = Instance.new("Frame")
-clickDelayFill.Size = UDim2.new(0.1, 0, 1, 0)
-clickDelayFill.BackgroundColor3 = Color3.fromRGB(0, 255, 150)
-clickDelayFill.Parent = clickDelaySlider
-
-local clickDelayFillCorner = Instance.new("UICorner")
-clickDelayFillCorner.CornerRadius = UDim.new(0.2, 0)
-clickDelayFillCorner.Parent = clickDelayFill
-
-local clickDelayValue = Instance.new("TextLabel")
-clickDelayValue.Size = UDim2.new(1, 0, 0.6, 0)
-clickDelayValue.Position = UDim2.new(0, 0, 0.4, 0)
-clickDelayValue.BackgroundTransparency = 1
-clickDelayValue.Text = "Drag to adjust (0.01s - 1s)"
-clickDelayValue.Font = Enum.Font.SciFi
-clickDelayValue.TextColor3 = Color3.fromRGB(150, 150, 200)
-clickDelayValue.TextSize = 10
-clickDelayValue.TextXAlignment = Enum.TextXAlignment.Center
-clickDelayValue.Parent = clickDelayFrame
+-- Click Delay Info
+local clickDelayInfo = Instance.new("TextLabel")
+clickDelayInfo.Size = UDim2.new(0.8, 0, 0.1, 0)
+clickDelayInfo.Position = UDim2.new(0.1, 0, 0.4, 0)
+clickDelayInfo.BackgroundTransparency = 1
+clickDelayInfo.Text = "Click Delay: 0s (Instant)"
+clickDelayInfo.Font = Enum.Font.SciFi
+clickDelayInfo.TextColor3 = Color3.fromRGB(200, 200, 255)
+clickDelayInfo.TextSize = 14
+clickDelayInfo.Parent = clickerTabContainer
 
 -- Status Label (Shared between tabs)
 local statusLabel = Instance.new("TextLabel")
@@ -375,7 +338,7 @@ local EggState = {
 local ClickerState = {
     AutoClickerEnabled = false,
     AutoClickerRunning = false,
-    ClickDelay = 0.1
+    ClickDelay = 0  -- Instant clicks
 }
 
 -- Get egg list
@@ -517,6 +480,7 @@ local function startAutoClicker()
                     NetworkModule.FireServer(NetworkModule, "Tap", true)
                 end
             end)
+            -- Instant clicks (0 delay)
             task.wait(ClickerState.ClickDelay)
         end
         
@@ -744,43 +708,6 @@ clickerToggle.MouseButton1Click:Connect(function()
     end)
 end)
 
--- Click Delay Slider functionality
-local isDragging = false
-
-local function updateClickDelaySlider(value)
-    value = math.clamp(value, 0.01, 1)
-    ClickerState.ClickDelay = value
-    local fillPercent = (value - 0.01) / 0.99
-    clickDelayFill.Size = UDim2.new(fillPercent, 0, 1, 0)
-    clickDelayLabel.Text = string.format("Click Delay: %.2fs", value)
-end
-
-clickDelaySlider.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        isDragging = true
-    end
-end)
-
-clickDelaySlider.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        isDragging = false
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local mousePos = UserInputService:GetMouseLocation()
-        local sliderAbsPos = clickDelaySlider.AbsolutePosition
-        local sliderSize = clickDelaySlider.AbsoluteSize.X
-        
-        local relativeX = (mousePos.X - sliderAbsPos.X) / sliderSize
-        relativeX = math.clamp(relativeX, 0, 1)
-        
-        local value = 0.01 + (relativeX * 0.99)
-        updateClickDelaySlider(value)
-    end
-end)
-
 -- Hotkey support
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
@@ -916,7 +843,6 @@ end)
 
 -- Initialize
 updateAmountButtons()
-updateClickDelaySlider(0.1) -- Default click delay
 
 -- Cleanup on character change
 Players.LocalPlayer.CharacterAdded:Connect(function()
@@ -937,4 +863,5 @@ print("Controls:")
 print("- T: Toggle GUI visibility")
 print("- F: Toggle Auto Clicker")
 print("- RightShift: Toggle Auto Hatch")
+print("- Click Delay: 0s (Instant clicks)")
 print("- Click hamburger button to slide GUI")
