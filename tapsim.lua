@@ -8,7 +8,7 @@ local RunService = game:GetService("RunService")
 
 -- Main GUI
 local gui = Instance.new("ScreenGui")
-gui.Name = "Zyrtec Hub"
+gui.Name = "ZyrtecHub"
 gui.ResetOnSpawn = false
 gui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
@@ -31,7 +31,7 @@ toggleCorner.Parent = toggleButton
 
 -- Main Frame
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0.35, 0, 0.6, 0)  -- Slightly larger for more content
+mainFrame.Size = UDim2.new(0.35, 0, 0.6, 0)
 mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
@@ -94,7 +94,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0.12, 0)
 title.Position = UDim2.new(0, 0, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "Zyrtec Hub"
+title.Text = "ZYRTEC HUB"
 title.Font = Enum.Font.SciFi
 title.TextColor3 = Color3.fromRGB(0, 200, 255)
 title.TextSize = 18
@@ -125,13 +125,13 @@ local tabButtons = {}
 -- Create tab buttons
 for tabName, tabInfo in pairs(tabs) do
     local tabButton = Instance.new("TextButton")
-    tabButton.Size = UDim2.new(0.3, 0, 0.9, 0)  -- Smaller for 3 tabs
+    tabButton.Size = UDim2.new(0.3, 0, 0.9, 0)
     tabButton.BackgroundColor3 = tabInfo.Color
     tabButton.BackgroundTransparency = 0.5
     tabButton.Text = tabInfo.Name
     tabButton.Font = Enum.Font.SciFi
     tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    tabButton.TextSize = 13  -- Slightly smaller for 3 tabs
+    tabButton.TextSize = 13
     tabButton.AutoButtonColor = false
     tabButton.Parent = tabButtonsFrame
     
@@ -204,7 +204,7 @@ local infiniteJumpCorner = Instance.new("UICorner")
 infiniteJumpCorner.CornerRadius = UDim.new(0.2, 0)
 infiniteJumpCorner.Parent = infiniteJumpToggle
 
--- Speed Changer
+-- Speed Changer with + and - buttons
 local speedFrame = Instance.new("Frame")
 speedFrame.Size = UDim2.new(0.8, 0, 0.2, 0)
 speedFrame.Position = UDim2.new(0.1, 0, 0.38, 0)
@@ -222,35 +222,69 @@ speedLabel.TextSize = 14
 speedLabel.TextXAlignment = Enum.TextXAlignment.Left
 speedLabel.Parent = speedFrame
 
-local speedSlider = Instance.new("Frame")
-speedSlider.Size = UDim2.new(1, 0, 0.4, 0)
-speedSlider.Position = UDim2.new(0, 0, 0.4, 0)
-speedSlider.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-speedSlider.Parent = speedFrame
+-- Speed buttons container
+local speedButtonsContainer = Instance.new("Frame")
+speedButtonsContainer.Size = UDim2.new(1, 0, 0.6, 0)
+speedButtonsContainer.Position = UDim2.new(0, 0, 0.4, 0)
+speedButtonsContainer.BackgroundTransparency = 1
+speedButtonsContainer.Parent = speedFrame
 
-local speedSliderCorner = Instance.new("UICorner")
-speedSliderCorner.CornerRadius = UDim.new(0.2, 0)
-speedSliderCorner.Parent = speedSlider
+-- Speed value display
+local speedValueDisplay = Instance.new("TextLabel")
+speedValueDisplay.Size = UDim2.new(0.4, 0, 1, 0)
+speedValueDisplay.Position = UDim2.new(0.3, 0, 0, 0)
+speedValueDisplay.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+speedValueDisplay.Text = "30"
+speedValueDisplay.Font = Enum.Font.SciFi
+speedValueDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedValueDisplay.TextSize = 16
+speedValueDisplay.Parent = speedButtonsContainer
 
-local speedFill = Instance.new("Frame")
-speedFill.Size = UDim2.new(1, 0, 1, 0)  -- Full for default 30
-speedFill.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
-speedFill.Parent = speedSlider
+local speedValueCorner = Instance.new("UICorner")
+speedValueCorner.CornerRadius = UDim.new(0.2, 0)
+speedValueCorner.Parent = speedValueDisplay
 
-local speedFillCorner = Instance.new("UICorner")
-speedFillCorner.CornerRadius = UDim.new(0.2, 0)
-speedFillCorner.Parent = speedFill
+-- Minus button
+local minusButton = Instance.new("TextButton")
+minusButton.Size = UDim2.new(0.2, 0, 1, 0)
+minusButton.Position = UDim2.new(0, 0, 0, 0)
+minusButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+minusButton.Text = "-"
+minusButton.Font = Enum.Font.SciFi
+minusButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+minusButton.TextSize = 20
+minusButton.Parent = speedButtonsContainer
 
-local speedValue = Instance.new("TextLabel")
-speedValue.Size = UDim2.new(1, 0, 0.6, 0)
-speedValue.Position = UDim2.new(0, 0, 0.4, 0)
-speedValue.BackgroundTransparency = 1
-speedValue.Text = "Drag to adjust (16 - 100)"
-speedValue.Font = Enum.Font.SciFi
-speedValue.TextColor3 = Color3.fromRGB(150, 150, 200)
-speedValue.TextSize = 10
-speedValue.TextXAlignment = Enum.TextXAlignment.Center
-speedValue.Parent = speedFrame
+local minusCorner = Instance.new("UICorner")
+minusCorner.CornerRadius = UDim.new(0.2, 0)
+minusCorner.Parent = minusButton
+
+-- Plus button
+local plusButton = Instance.new("TextButton")
+plusButton.Size = UDim2.new(0.2, 0, 1, 0)
+plusButton.Position = UDim2.new(0.8, 0, 0, 0)
+plusButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+plusButton.Text = "+"
+plusButton.Font = Enum.Font.SciFi
+plusButton.TextColor3 = Color3.fromRGB(100, 255, 100)
+plusButton.TextSize = 20
+plusButton.Parent = speedButtonsContainer
+
+local plusCorner = Instance.new("UICorner")
+plusCorner.CornerRadius = UDim.new(0.2, 0)
+plusCorner.Parent = plusButton
+
+-- Speed info text
+local speedInfo = Instance.new("TextLabel")
+speedInfo.Size = UDim2.new(1, 0, 0.6, 0)
+speedInfo.Position = UDim2.new(0, 0, 0.4, 0)
+speedInfo.BackgroundTransparency = 1
+speedInfo.Text = "Tap or hold +/- to adjust (16-100)"
+speedInfo.Font = Enum.Font.SciFi
+speedInfo.TextColor3 = Color3.fromRGB(150, 150, 200)
+speedInfo.TextSize = 10
+speedInfo.TextXAlignment = Enum.TextXAlignment.Center
+speedInfo.Parent = speedFrame
 
 -- Hotkeys Info
 local hotkeysInfo = Instance.new("TextLabel")
@@ -433,7 +467,8 @@ mainFrame.Parent = gui
 local MainState = {
     InfiniteJump = false,
     WalkSpeed = 30,
-    OriginalWalkSpeed = 16
+    OriginalWalkSpeed = 16,
+    IsAdjustingSpeed = false
 }
 
 local EggState = {
@@ -491,10 +526,10 @@ end
 -- Speed Changer Functionality
 local speedConnection
 local function updateSpeed(value)
+    value = math.floor(math.clamp(value, 16, 100))
     MainState.WalkSpeed = value
-    local fillPercent = (value - 16) / 84  -- 16 to 100 range
-    speedFill.Size = UDim2.new(fillPercent, 0, 1, 0)
-    speedLabel.Text = "Walk Speed: " .. math.floor(value)
+    speedLabel.Text = "Walk Speed: " .. value
+    speedValueDisplay.Text = tostring(value)
     
     -- Apply speed to character
     local character = Players.LocalPlayer.Character
@@ -503,6 +538,51 @@ local function updateSpeed(value)
         if humanoid then
             humanoid.WalkSpeed = value
         end
+    end
+    
+    -- Update display color based on speed
+    if value <= 30 then
+        speedValueDisplay.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    elseif value <= 60 then
+        speedValueDisplay.BackgroundColor3 = Color3.fromRGB(60, 60, 40)
+    else
+        speedValueDisplay.BackgroundColor3 = Color3.fromRGB(60, 40, 40)
+    end
+end
+
+-- Speed adjustment function
+local function adjustSpeed(amount, isHold)
+    if MainState.IsAdjustingSpeed and not isHold then return end
+    
+    MainState.IsAdjustingSpeed = isHold
+    
+    if isHold then
+        -- Hold mode: continuously adjust while holding
+        local interval = 0.05  -- 20 times per second
+        local acceleration = 0.5  -- Start slow
+        
+        while MainState.IsAdjustingSpeed do
+            local newSpeed = MainState.WalkSpeed + (amount * acceleration)
+            updateSpeed(newSpeed)
+            
+            -- Increase acceleration over time for faster holding
+            acceleration = math.min(acceleration + 0.2, 5)
+            
+            statusLabel.Text = "Speed: " .. math.floor(MainState.WalkSpeed)
+            task.wait(interval)
+        end
+    else
+        -- Tap mode: single adjustment
+        local newSpeed = MainState.WalkSpeed + amount
+        updateSpeed(newSpeed)
+        statusLabel.Text = "Speed: " .. math.floor(MainState.WalkSpeed)
+        
+        task.spawn(function()
+            task.wait(1)
+            if statusLabel.Text == "Speed: " .. math.floor(MainState.WalkSpeed) then
+                statusLabel.Text = ""
+            end
+        end)
     end
 end
 
@@ -520,34 +600,51 @@ local function monitorCharacter()
     end)
 end
 
--- Speed slider functionality
-local isSpeedDragging = false
-speedSlider.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        isSpeedDragging = true
-    end
-end)
+-- Speed buttons functionality
+local function setupSpeedButton(button, amount)
+    local isHolding = false
+    
+    button.MouseButton1Down:Connect(function()
+        isHolding = true
+        adjustSpeed(amount, true)
+    end)
+    
+    button.MouseButton1Up:Connect(function()
+        isHolding = false
+        MainState.IsAdjustingSpeed = false
+    end)
+    
+    button.MouseLeave:Connect(function()
+        if isHolding then
+            isHolding = false
+            MainState.IsAdjustingSpeed = false
+        end
+    end)
+    
+    -- Single click functionality
+    button.MouseButton1Click:Connect(function()
+        if not isHolding then  -- Prevent double fire
+            adjustSpeed(amount, false)
+        end
+    end)
+    
+    -- Button hover effects
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(70, 70, 90)
+        }):Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+        }):Play()
+    end)
+end
 
-speedSlider.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        isSpeedDragging = false
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if isSpeedDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local mousePos = UserInputService:GetMouseLocation()
-        local sliderAbsPos = speedSlider.AbsolutePosition
-        local sliderSize = speedSlider.AbsoluteSize.X
-        
-        local relativeX = (mousePos.X - sliderAbsPos.X) / sliderSize
-        relativeX = math.clamp(relativeX, 0, 1)
-        
-        local value = 16 + (relativeX * 84)  -- 16 to 100 range
-        updateSpeed(value)
-        statusLabel.Text = "Speed: " .. math.floor(value)
-    end
-end)
+-- Setup speed buttons
+setupSpeedButton(minusButton, -1)
+setupSpeedButton(plusButton, 1)
 
 -- Toggle infinite jump
 infiniteJumpToggle.MouseButton1Click:Connect(function()
@@ -1084,13 +1181,4 @@ Players.LocalPlayer.CharacterAdded:Connect(function()
     end
 end)
 
-print("Auto Hatcher GUI loaded!")
-print("Controls:")
-print("- T: Toggle GUI visibility")
-print("- F: Toggle Auto Clicker")
-print("- RightShift: Toggle Auto Hatch")
-print("- Walk Speed: Default 30 (adjustable 16-100)")
-print("- Infinite Jump: Toggle on/off")
-print("- Click Delay: 0s (Instant clicks)")
-print("- All hatch amounts available: 1x, 3x, 8x")
-print("- Click hamburger button to slide GUI")
+print("Zyrtec Hub loaded successfully!")
