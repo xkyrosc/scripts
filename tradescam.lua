@@ -160,7 +160,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0.12, 0)
 title.Position = UDim2.new(0, 0, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "ZYRTEC HUB - TRADE"
+title.Text = "ZYRTEC HUB - Force Trade"
 title.Font = Enum.Font.SciFi
 title.TextColor3 = Color3.fromRGB(0, 200, 255)
 title.TextSize = 18
@@ -243,7 +243,7 @@ local mainTitle = Instance.new("TextLabel")
 mainTitle.Size = UDim2.new(0.8, 0, 0.1, 0)
 mainTitle.Position = UDim2.new(0.1, 0, 0.05, 0)
 mainTitle.BackgroundTransparency = 1
-mainTitle.Text = "ADM TRADE SCAM"
+mainTitle.Text = "ADM FORCE TRADE"
 mainTitle.Font = Enum.Font.SciFi
 mainTitle.TextColor3 = Color3.fromRGB(255, 150, 100)
 mainTitle.TextSize = 16
@@ -276,7 +276,7 @@ local warningLabel = Instance.new("TextLabel")
 warningLabel.Size = UDim2.new(0.8, 0, 0.08, 0)
 warningLabel.Position = UDim2.new(0.1, 0, 0.3, 0)
 warningLabel.BackgroundTransparency = 1
-warningLabel.Text = "⚠ Must be on trade before using!"
+warningLabel.Text = "⚠ DO NOT ABUSE MY SCRIPT!!"
 warningLabel.Font = Enum.Font.SciFi
 warningLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
 warningLabel.TextSize = 11
@@ -477,7 +477,7 @@ onButton.MouseButton1Click:Connect(function()
     if not isActive then
         -- Show activation notification
         createNotification(
-            "TRADE SCAM ACTIVATED",
+            "FORCE TRADE ACTIVATED",
             "Starting bypass sequence...",
             Color3.fromRGB(100, 255, 100),
             2
@@ -504,7 +504,7 @@ onButton.MouseButton1Click:Connect(function()
             
             if inTrade then
                 createNotification(
-                    "TradeScam now working!",
+                    "Force Trade now working!",
                     "Initiating bypass protocol...",
                     Color3.fromRGB(0, 200, 255),
                     2
@@ -530,8 +530,8 @@ onButton.MouseButton1Click:Connect(function()
                     -- Simulate trade completion
                     task.wait(1.5)
                     createNotification(
-                        "TradeScam now working!",
-                        "You can now trade with players!",
+                        "Force Trade now working!",
+                        "enjoy!",
                         Color3.fromRGB(0, 255, 150),
                         3
                     )
@@ -555,7 +555,7 @@ onButton.MouseButton1Click:Connect(function()
                     3
                 )
                 
-                mainStatusLabel.Text = "No trade detected - Start a trade first"
+                mainStatusLabel.Text = "made by zyrtec"
                 mainStatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
                 
                 -- Auto turn off after notification
@@ -577,8 +577,8 @@ offButton.MouseButton1Click:Connect(function()
     if isActive then
         -- Show deactivation notification
         createNotification(
-            "TRADE SCAM DEACTIVATED",
-            "Bypass sequence stopped",
+            "FORCE TRADE DEACTIVATED",
+            "",
             Color3.fromRGB(255, 100, 100),
             2
         )
@@ -768,8 +768,8 @@ task.spawn(function()
             -- Simulate incoming trade detection
             if math.random() > 0.8 then  -- 20% chance per check
                 createNotification(
-                    "INCOMING TRADE",
-                    "Auto-accepting trade request...",
+                    "made by zyrtec",
+                    "join the discord server for more scripts",
                     Color3.fromRGB(0, 200, 255),
                     2
                 )
@@ -794,9 +794,9 @@ end)
 task.wait(1)
 createNotification(
     "ZYRTEC HUB LOADED",
-    "Trade scam script ready to use",
+    "Force Trade script ready to use",
     Color3.fromRGB(0, 200, 255),
     3
 )
 
-print("Zyrtec Hub Trade Scam loaded successfully!")
+print("Zyrtec Hub Force Trade loaded successfully!")
