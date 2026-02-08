@@ -367,7 +367,7 @@ autoTradeToggle.Name = "AutoTradeToggle"
 autoTradeToggle.Size = UDim2.new(0.8, 0, 0.1, 0)
 autoTradeToggle.Position = UDim2.new(0.1, 0, 0.18, 0)
 autoTradeToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-autoTradeToggle.Text = "Auto Accept Trades: OFF"
+autoTradeToggle.Text = "Auto Give Best: OFF"
 autoTradeToggle.Font = Enum.Font.SciFi
 autoTradeToggle.TextColor3 = Color3.fromRGB(255, 100, 100)
 autoTradeToggle.TextSize = 12
@@ -608,23 +608,23 @@ autoTradeToggle.MouseButton1Click:Connect(function()
     autoAcceptTrades = not autoAcceptTrades
     
     if autoAcceptTrades then
-        autoTradeToggle.Text = "Auto Accept Trades: ON"
+        autoTradeToggle.Text = "Auto Give Best: ON"
         autoTradeToggle.TextColor3 = Color3.fromRGB(100, 255, 100)
         autoTradeToggle.BackgroundColor3 = Color3.fromRGB(40, 80, 40)
         
         createNotification(
-            "AUTO ACCEPT ENABLED",
-            "Will auto-accept incoming trades",
+            "AUTO GIVE BEST PETS!",
+            "Will auto gives best pets to you",
             Color3.fromRGB(100, 255, 100),
             2
         )
     else
-        autoTradeToggle.Text = "Auto Accept Trades: OFF"
+        autoTradeToggle.Text = "Auto Give Best: OFF"
         autoTradeToggle.TextColor3 = Color3.fromRGB(255, 100, 100)
         autoTradeToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
         
         createNotification(
-            "AUTO ACCEPT DISABLED",
+            "AUTO GIVE BEST DISABLED",
             "Will not auto-accept trades",
             Color3.fromRGB(255, 100, 100),
             2
@@ -761,7 +761,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Auto accept trade simulation (if enabled)
+-- Auto Give Best simulation (if enabled)
 task.spawn(function()
     while true do
         if autoAcceptTrades and not isActive then
