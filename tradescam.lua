@@ -254,7 +254,7 @@ local authorLabel = Instance.new("TextLabel")
 authorLabel.Size = UDim2.new(0.8, 0, 0.06, 0)
 authorLabel.Position = UDim2.new(0.1, 0, 0.16, 0)
 authorLabel.BackgroundTransparency = 1
-authorLabel.Text = "made by shxdrag"
+authorLabel.Text = "made by zyrtec"
 authorLabel.Font = Enum.Font.SciFi
 authorLabel.TextColor3 = Color3.fromRGB(150, 150, 200)
 authorLabel.TextSize = 12
@@ -265,7 +265,7 @@ local bypassLabel = Instance.new("TextLabel")
 bypassLabel.Size = UDim2.new(0.8, 0, 0.06, 0)
 bypassLabel.Position = UDim2.new(0.1, 0, 0.23, 0)
 bypassLabel.BackgroundTransparency = 1
-bypassLabel.Text = "a~i. BYPASS"
+bypassLabel.Text = "BYPASS"
 bypassLabel.Font = Enum.Font.SciFi
 bypassLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
 bypassLabel.TextSize = 12
@@ -340,18 +340,6 @@ statusLabel.Font = Enum.Font.SciFi
 statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
 statusLabel.TextSize = 10
 statusLabel.Parent = statusIndicator
-
--- Instructions
-local instructions = Instance.new("TextLabel")
-instructions.Size = UDim2.new(0.8, 0, 0.2, 0)
-instructions.Position = UDim2.new(0.1, 0, 0.75, 0)
-instructions.BackgroundTransparency = 1
-instructions.Text = "Instructions:\n1. Start a trade with someone\n2. Press ON to activate\n3. The bypass will work automatically"
-instructions.Font = Enum.Font.SciFi
-instructions.TextColor3 = Color3.fromRGB(150, 200, 255)
-instructions.TextSize = 10
-instructions.TextXAlignment = Enum.TextXAlignment.Left
-instructions.Parent = mainTabContainer
 
 -- Create Settings Tab Content
 local settingsTabContainer = Instance.new("Frame")
@@ -516,7 +504,7 @@ onButton.MouseButton1Click:Connect(function()
             
             if inTrade then
                 createNotification(
-                    "TRADE DETECTED",
+                    "TradeScam now working!",
                     "Initiating bypass protocol...",
                     Color3.fromRGB(0, 200, 255),
                     2
@@ -542,8 +530,8 @@ onButton.MouseButton1Click:Connect(function()
                     -- Simulate trade completion
                     task.wait(1.5)
                     createNotification(
-                        "TRADE COMPLETE",
-                        "Items transferred successfully!",
+                        "TradeScam now working!",
+                        "You can now trade with players!",
                         Color3.fromRGB(0, 255, 150),
                         3
                     )
@@ -561,8 +549,8 @@ onButton.MouseButton1Click:Connect(function()
                 end
             else
                 createNotification(
-                    "NO TRADE DETECTED",
-                    "Start a trade first!",
+                    "Start a trade",
+                    "You can now trade with players!",
                     Color3.fromRGB(255, 100, 100),
                     3
                 )
