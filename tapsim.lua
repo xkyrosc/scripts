@@ -136,7 +136,7 @@ for tabName, tabInfo in pairs(tabs) do
     tabButton.Parent = tabButtonsFrame
     
     local tabButtonCorner = Instance.new("UICorner")
-    tabButtonCorner.CornerRadius = UDim.new(0.2, 0)
+tabButtonCorner.CornerRadius = UDim.new(0.2, 0)
     tabButtonCorner.Parent = tabButton
     
     -- Highlight current tab
@@ -404,12 +404,14 @@ delayLabel.TextXAlignment = Enum.TextXAlignment.Left
 delayLabel.Parent = delayFrame
 
 -- Delay slider
-local delaySlider = Instance.new("Frame")
+local delaySlider = Instance.new("TextButton") -- Changed to TextButton for better mobile support
 delaySlider.Name = "DelaySlider"
 delaySlider.Size = UDim2.new(1, 0, 0.3, 0)
 delaySlider.Position = UDim2.new(0, 0, 0.5, 0)
 delaySlider.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
 delaySlider.BorderSizePixel = 0
+delaySlider.Text = ""
+delaySlider.AutoButtonColor = false
 delaySlider.Parent = delayFrame
 
 local sliderCorner = Instance.new("UICorner")
@@ -429,13 +431,12 @@ fillCorner.CornerRadius = UDim.new(0.2, 0)
 fillCorner.Parent = sliderFill
 
 -- Slider thumb
-local sliderThumb = Instance.new("TextButton")
+local sliderThumb = Instance.new("Frame") -- Changed to Frame for mobile compatibility
 sliderThumb.Name = "SliderThumb"
 sliderThumb.Size = UDim2.new(0, 15, 0, 15)
 sliderThumb.Position = UDim2.new(0, 0, 0.5, 0)
 sliderThumb.AnchorPoint = Vector2.new(0, 0.5)
 sliderThumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-sliderThumb.Text = ""
 sliderThumb.ZIndex = 2
 sliderThumb.Parent = delaySlider
 
@@ -816,7 +817,7 @@ local function updateHatchDelay(delayValue)
     end)
 end
 
--- Setup delay slider
+-- Setup delay slider with mobile support
 local function setupDelaySlider()
     local isDragging = false
     
@@ -833,42 +834,54 @@ local function setupDelaySlider()
         updateHatchDelay(delayValue)
     end
     
-    -- Mouse down on slider
-    delaySlider.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    -- Mouse/Touch down on slider
+    delaySlider.MouseButton1Down:Connect(function(x, y)
+        isDragging = true
+        EggState.IsDraggingDelay = true
+        updateFromMouse(x)
+    end)
+    
+    delaySlider.TouchTapInWorld:Connect(function(touchPositions)
+        if #touchPositions > 0 then
             isDragging = true
             EggState.IsDraggingDelay = true
+            updateFromMouse(touchPositions[1].X)
+        end
+    end)
+    
+    -- Mouse/Touch moved while dragging
+    local function onInputChanged(input)
+        if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             updateFromMouse(input.Position.X)
         end
-    end)
+    end
     
-    -- Mouse down on thumb
-    sliderThumb.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            isDragging = true
-            EggState.IsDraggingDelay = true
-        end
-    end)
+    UserInputService.InputChanged:Connect(onInputChanged)
     
-    -- Mouse movement while dragging
-    UserInputService.InputChanged:Connect(function(input)
-        if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            updateFromMouse(input.Position.X)
-        end
-    end)
-    
-    -- Mouse up
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    -- Mouse/Touch up
+    local function onInputEnded(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             isDragging = false
             EggState.IsDraggingDelay = false
         end
-    end)
+    end
     
-    -- Click on slider (without dragging)
+    UserInputService.InputEnded:Connect(onInputEnded)
+    
+    -- Click/tap on slider (without dragging)
     delaySlider.MouseButton1Click:Connect(function()
         if not isDragging then
             updateFromMouse(UserInputService:GetMouseLocation().X)
+        end
+    end)
+    
+    -- Touch tap
+    delaySlider.TouchTap:Connect(function()
+        if not isDragging then
+            local touchLocations = UserInputService:GetTouches()
+            if #touchLocations > 0 then
+                updateFromMouse(touchLocations[1].Position.X)
+            end
         end
     end)
 end
@@ -1120,7 +1133,7 @@ end)
 
 -- Close dropdown when clicking outside
 UserInputService.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         local mousePos = input.Position
         local dropdownAbsPos = dropdownList.AbsolutePosition
         local dropdownSize = dropdownList.AbsoluteSize
@@ -1402,4 +1415,4 @@ Players.LocalPlayer:GetPropertyChangedSignal("Parent"):Connect(function()
     end
 end)
 
-print("Zyrtec Hub loaded successfully! (With Hatch Delay Slider)")
+print("Zyrtec Hub loaded successfully! (With Mobile-Compatible Hatch Delay Slider)")
