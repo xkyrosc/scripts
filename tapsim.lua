@@ -385,11 +385,81 @@ for i, amount in ipairs(amounts) do
     amountButtons[i] = btn
 end
 
+-- Hatch Delay Slider
+local delayFrame = Instance.new("Frame")
+delayFrame.Size = UDim2.new(0.8, 0, 0.15, 0)
+delayFrame.Position = UDim2.new(0.1, 0, 0.62, 0)
+delayFrame.BackgroundTransparency = 1
+delayFrame.Parent = eggsTabContainer
+
+local delayLabel = Instance.new("TextLabel")
+delayLabel.Size = UDim2.new(1, 0, 0.4, 0)
+delayLabel.Position = UDim2.new(0, 0, 0, 0)
+delayLabel.BackgroundTransparency = 1
+delayLabel.Text = "Hatch Delay: 0s"
+delayLabel.Font = Enum.Font.SciFi
+delayLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
+delayLabel.TextSize = 14
+delayLabel.TextXAlignment = Enum.TextXAlignment.Left
+delayLabel.Parent = delayFrame
+
+-- Delay slider
+local delaySlider = Instance.new("Frame")
+delaySlider.Name = "DelaySlider"
+delaySlider.Size = UDim2.new(1, 0, 0.3, 0)
+delaySlider.Position = UDim2.new(0, 0, 0.5, 0)
+delaySlider.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+delaySlider.BorderSizePixel = 0
+delaySlider.Parent = delayFrame
+
+local sliderCorner = Instance.new("UICorner")
+sliderCorner.CornerRadius = UDim.new(0.2, 0)
+sliderCorner.Parent = delaySlider
+
+-- Slider fill
+local sliderFill = Instance.new("Frame")
+sliderFill.Name = "SliderFill"
+sliderFill.Size = UDim2.new(0, 0, 1, 0)
+sliderFill.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+sliderFill.BorderSizePixel = 0
+sliderFill.Parent = delaySlider
+
+local fillCorner = Instance.new("UICorner")
+fillCorner.CornerRadius = UDim.new(0.2, 0)
+fillCorner.Parent = sliderFill
+
+-- Slider thumb
+local sliderThumb = Instance.new("TextButton")
+sliderThumb.Name = "SliderThumb"
+sliderThumb.Size = UDim2.new(0, 15, 0, 15)
+sliderThumb.Position = UDim2.new(0, 0, 0.5, 0)
+sliderThumb.AnchorPoint = Vector2.new(0, 0.5)
+sliderThumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+sliderThumb.Text = ""
+sliderThumb.ZIndex = 2
+sliderThumb.Parent = delaySlider
+
+local thumbCorner = Instance.new("UICorner")
+thumbCorner.CornerRadius = UDim.new(1, 0)
+thumbCorner.Parent = sliderThumb
+
+-- Delay value display
+local delayValueDisplay = Instance.new("TextLabel")
+delayValueDisplay.Size = UDim2.new(1, 0, 0.3, 0)
+delayValueDisplay.Position = UDim2.new(0, 0, 0.85, 0)
+delayValueDisplay.BackgroundTransparency = 1
+delayValueDisplay.Text = "0 seconds"
+delayValueDisplay.Font = Enum.Font.SciFi
+delayValueDisplay.TextColor3 = Color3.fromRGB(0, 200, 255)
+delayValueDisplay.TextSize = 12
+delayValueDisplay.TextXAlignment = Enum.TextXAlignment.Center
+delayValueDisplay.Parent = delayFrame
+
 -- Egg Hatch Toggle Button
 local hatchToggle = Instance.new("TextButton")
 hatchToggle.Name = "HatchToggle"
 hatchToggle.Size = UDim2.new(0.8, 0, 0.12, 0)
-hatchToggle.Position = UDim2.new(0.1, 0, 0.65, 0)
+hatchToggle.Position = UDim2.new(0.1, 0, 0.8, 0)
 hatchToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
 hatchToggle.Text = "AUTO HATCH: OFF"
 hatchToggle.Font = Enum.Font.SciFi
@@ -475,7 +545,9 @@ local MainState = {
 local EggState = {
     AutoHatch = false,
     SelEgg = nil,
-    EggAmt = 1
+    EggAmt = 1,
+    HatchDelay = 0,  -- New: Delay between hatches in seconds
+    IsDraggingDelay = false
 }
 
 local ClickerState = {
@@ -710,6 +782,97 @@ local function getEggList()
     return eggNames
 end
 
+-- Delay slider functionality
+local function updateHatchDelay(delayValue)
+    -- Clamp value between 0 and 5 seconds
+    delayValue = math.clamp(delayValue, 0, 5)
+    EggState.HatchDelay = delayValue
+    
+    -- Update slider visuals
+    local fillPercentage = delayValue / 5
+    sliderFill.Size = UDim2.new(fillPercentage, 0, 1, 0)
+    sliderThumb.Position = UDim2.new(fillPercentage, 0, 0.5, 0)
+    
+    -- Update display text
+    local displayText = string.format("%.1f", delayValue)
+    delayLabel.Text = "Hatch Delay: " .. displayText .. "s"
+    
+    if delayValue == 0 then
+        delayValueDisplay.Text = "Instant"
+        delayValueDisplay.TextColor3 = Color3.fromRGB(0, 255, 150)
+    else
+        delayValueDisplay.Text = displayText .. " seconds"
+        delayValueDisplay.TextColor3 = Color3.fromRGB(0, 200, 255)
+    end
+    
+    statusLabel.Text = "Hatch delay: " .. displayText .. "s"
+    statusLabel.TextColor3 = Color3.fromRGB(0, 200, 255)
+    
+    task.spawn(function()
+        task.wait(1)
+        if statusLabel.Text:find("Hatch delay") then
+            statusLabel.Text = ""
+        end
+    end)
+end
+
+-- Setup delay slider
+local function setupDelaySlider()
+    local isDragging = false
+    
+    local function updateFromMouse(mouseX)
+        local sliderAbsolutePos = delaySlider.AbsolutePosition.X
+        local sliderWidth = delaySlider.AbsoluteSize.X
+        
+        -- Calculate relative position (0 to 1)
+        local relativePos = math.clamp((mouseX - sliderAbsolutePos) / sliderWidth, 0, 1)
+        
+        -- Convert to delay value (0 to 5 seconds)
+        local delayValue = relativePos * 5
+        
+        updateHatchDelay(delayValue)
+    end
+    
+    -- Mouse down on slider
+    delaySlider.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = true
+            EggState.IsDraggingDelay = true
+            updateFromMouse(input.Position.X)
+        end
+    end)
+    
+    -- Mouse down on thumb
+    sliderThumb.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = true
+            EggState.IsDraggingDelay = true
+        end
+    end)
+    
+    -- Mouse movement while dragging
+    UserInputService.InputChanged:Connect(function(input)
+        if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateFromMouse(input.Position.X)
+        end
+    end)
+    
+    -- Mouse up
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = false
+            EggState.IsDraggingDelay = false
+        end
+    end)
+    
+    -- Click on slider (without dragging)
+    delaySlider.MouseButton1Click:Connect(function()
+        if not isDragging then
+            updateFromMouse(UserInputService:GetMouseLocation().X)
+        end
+    end)
+end
+
 -- Auto hatch functions
 local autoHatchThread = nil
 
@@ -759,10 +922,22 @@ local function startAutoHatch()
     
     autoHatchThread = task.spawn(function()
         while EggState.AutoHatch and EggState.SelEgg do
-            for _ = 1, 3 do
+            -- Open eggs multiple times per cycle for faster hatching when delay is 0
+            if EggState.HatchDelay == 0 then
+                for _ = 1, 3 do
+                    openEgg(EggState.SelEgg, EggState.EggAmt)
+                end
+            else
+                -- Single hatch when delay is > 0
                 openEgg(EggState.SelEgg, EggState.EggAmt)
             end
-            RunService.Heartbeat:Wait()
+            
+            -- Wait for the specified delay (0-5 seconds)
+            if EggState.HatchDelay > 0 then
+                task.wait(EggState.HatchDelay)
+            else
+                RunService.Heartbeat:Wait()  -- Minimal wait for instant hatches
+            end
         end
     end)
 end
@@ -977,7 +1152,9 @@ hatchToggle.MouseButton1Click:Connect(function()
         hatchToggle.Text = "AUTO HATCH: ON"
         hatchToggle.TextColor3 = Color3.fromRGB(100, 255, 100)
         hatchToggle.BackgroundColor3 = Color3.fromRGB(40, 80, 40)
-        statusLabel.Text = "Auto hatching: " .. EggState.SelEgg .. " x" .. EggState.EggAmt
+        
+        local delayText = EggState.HatchDelay == 0 and "Instant" or string.format("%.1fs", EggState.HatchDelay)
+        statusLabel.Text = "Auto hatching: " .. EggState.SelEgg .. " x" .. EggState.EggAmt .. " (" .. delayText .. " delay)"
         startAutoHatch()
     else
         hatchToggle.Text = "AUTO HATCH: OFF"
@@ -1044,7 +1221,9 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
             hatchToggle.Text = "AUTO HATCH: ON"
             hatchToggle.TextColor3 = Color3.fromRGB(100, 255, 100)
             hatchToggle.BackgroundColor3 = Color3.fromRGB(40, 80, 40)
-            statusLabel.Text = "Auto hatching (RightShift)"
+            
+            local delayText = EggState.HatchDelay == 0 and "Instant" or string.format("%.1fs", EggState.HatchDelay)
+            statusLabel.Text = "Auto hatching (RightShift) - " .. delayText .. " delay"
             startAutoHatch()
         else
             hatchToggle.Text = "AUTO HATCH: OFF"
@@ -1177,6 +1356,8 @@ end)
 -- Initialize
 updateAmountButtons()
 updateSpeed(30)  -- Set default speed to 30
+setupDelaySlider()  -- Setup the delay slider
+updateHatchDelay(0)  -- Set default hatch delay to 0
 monitorCharacter()  -- Start monitoring character for speed updates
 startSpeedMonitor()  -- Start continuous speed monitor
 
@@ -1221,4 +1402,4 @@ Players.LocalPlayer:GetPropertyChangedSignal("Parent"):Connect(function()
     end
 end)
 
-print("Zyrtec Hub loaded successfully!")
+print("Zyrtec Hub loaded successfully! (With Hatch Delay Slider)")
