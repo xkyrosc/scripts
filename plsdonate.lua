@@ -1,4 +1,4 @@
--- by 7yd7
+-- by zyrtechub
 -- FIXED: Left button text = "Buy item", Right balance = CustomBalance + Robux logo
 -- FIXED: Both popup logos use official Robux icon
 -- FIXED: Balance spoof Robux logo is white and positioned closer to text
