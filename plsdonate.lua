@@ -1,833 +1,438 @@
--- by zyrtechub
--- FIXED: Left button text = "Buy item", Right balance = CustomBalance + Robux logo
--- FIXED: Both popup logos use official Robux icon
--- FIXED: Balance spoof Robux logo is white and positioned closer to text
--- ADDED: Small compact donation popup after purchase
+-- ============================================
+-- FIREBASE KEY SYSTEM v1.0
+-- ============================================
 
-getgenv().Settings = {
-    CopyButton = false,
-    AutoButton = false,
-    AutoInterval = 0.1,
-    InstantPurchase = false,
-    AutoMassPurchase = false,
-    CustomBalance = "9,999,999",
-    Debug = false
-}
-
-if not game:IsLoaded() then
-    game.Loaded:Wait()
-end
-
-local CoreGui = game:GetService("CoreGui")
-local MarketplaceService = game:GetService("MarketplaceService")
-local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
-local GuiService = game:GetService("GuiService")
-local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
-while not LocalPlayer do
-    task.wait()
-    LocalPlayer = Players.LocalPlayer
+-- ========== CONFIGURATION ==========
+local CONFIG = {
+    databaseURL = "https://plsdonate-e7fb8-default-rtdb.firebaseio.com/",
+    secret = "4QNe3gcaBgb1oIyVJ9JwKp8KyDqfeB03ac3yKXMV",
+    scriptName = "ZyrtecHub",
+    scriptVersion = "1.0.0",
+    developerDiscord = "https://discord.gg/Sqk57CrUC9", -- Optional
+    keyPlaceholder = "XXXX-XXXX-XXXX"
+}
+
+-- ========== HWID GENERATION ==========
+local function getHWID()
+    local parts = {}
+    
+    -- Try to get unique identifiers
+    pcall(function()
+        local success, result = pcall(function()
+            return game:GetService("RbxAnalyticsService"):GetClientId()
+        end)
+        if success then
+            table.insert(parts, result)
+        end
+    end)
+    
+    -- Fallback identifiers
+    table.insert(parts, tostring(Players.LocalPlayer.UserId))
+    table.insert(parts, tostring(game.PlaceId))
+    table.insert(parts, tostring(game.GameId))
+    table.insert(parts, tostring(os.time()):sub(1, 5))
+    
+    return HttpService:JSONEncode(parts)
 end
 
--- Store the price of the item being purchased
-local currentItemPrice = 0
+-- ========== FIREBASE API FUNCTIONS ==========
+local Firebase = {}
 
--- ========== SMALL COMPACT DONATION POPUP ==========
-local function createDonatePopup(amount)
-    local playerGui = LocalPlayer:WaitForChild("PlayerGui")
-
-    -- remove old popup
-    local old = playerGui:FindFirstChild("DonatePopup")
-    if old then
-        old:Destroy()
-    end
-
-    local gui = Instance.new("ScreenGui")
-    gui.Name = "DonatePopup"
-    gui.IgnoreGuiInset = true
-    gui.ResetOnSpawn = false
-    gui.Parent = playerGui
-
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 250, 0, 40)
-    frame.Position = UDim2.new(0.5, -125, 0.75, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(28, 255, 73)
-    frame.BorderSizePixel = 0
-    frame.Parent = gui
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = frame
-
-    -- FIXED: Left logo now uses official Robux icon (white version for dark bg contrast)
-    local leftLogo = Instance.new("ImageLabel")
-    leftLogo.Name = "LeftLogo"
-    leftLogo.Size = UDim2.new(0, 20, 0, 20)
-    leftLogo.Position = UDim2.new(0, 10, 0.5, -10)
-    leftLogo.BackgroundTransparency = 1
-    leftLogo.Image = "rbxasset://textures/ui/common/robux@3x.png"
-    leftLogo.ImageColor3 = Color3.fromRGB(0, 80, 20)  -- Dark green to match popup theme
-    leftLogo.Parent = frame
-
-    local text = Instance.new("TextLabel")
-    text.Size = UDim2.new(0, 85, 1, 0)
-    text.Position = UDim2.new(0, 35, 0, 0)
-    text.BackgroundTransparency = 1
-    text.Font = Enum.Font.GothamBold
-    text.TextSize = 14
-    text.TextColor3 = Color3.fromRGB(0, 50, 10)
-    text.TextXAlignment = Enum.TextXAlignment.Left
-    text.Text = "you donated"
-    text.Parent = frame
-
-    -- FIXED: Robux logo uses official built-in texture path
-    local robuxLogo = Instance.new("ImageLabel")
-    robuxLogo.Name = "RobuxLogo"
-    robuxLogo.Size = UDim2.new(0, 16, 0, 16)
-    robuxLogo.Position = UDim2.new(0, 130, 0.5, -8)
-    robuxLogo.BackgroundTransparency = 1
-    robuxLogo.Image = "rbxasset://textures/ui/common/robux@3x.png"
-    robuxLogo.ImageColor3 = Color3.fromRGB(0, 80, 20)
-    robuxLogo.Parent = frame
-
-    local amountText = Instance.new("TextLabel")
-    amountText.Size = UDim2.new(0, 70, 1, 0)
-    amountText.Position = UDim2.new(0, 150, 0, 0)
-    amountText.BackgroundTransparency = 1
-    amountText.Font = Enum.Font.GothamBold
-    amountText.TextSize = 14
-    amountText.TextColor3 = Color3.fromRGB(0, 50, 10)
-    amountText.TextXAlignment = Enum.TextXAlignment.Left
-    amountText.Text = tostring(amount)
-    amountText.Parent = frame
-
-    -- popup animation (slide in from right)
-    frame.Position = UDim2.new(1, 0, 0.75, 0)
-
-    TweenService:Create(
-        frame,
-        TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-        {
-            Position = UDim2.new(0.5, -125, 0.75, 0)
+function Firebase:request(path, method, data)
+    local url = CONFIG.databaseURL .. path .. ".json?auth=" .. CONFIG.secret
+    
+    local options = {
+        Url = url,
+        Method = method or "GET",
+        Headers = {
+            ["Content-Type"] = "application/json"
         }
-    ):Play()
-
-    -- auto remove after 1.5 seconds
-    task.delay(1.5, function()
-        local tween = TweenService:Create(
-            frame,
-            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-            {
-                Position = UDim2.new(1, 0, 0.75, 0)
-            }
-        )
-
-        tween:Play()
-
-        for _, v in ipairs(frame:GetDescendants()) do
-            if v:IsA("TextLabel") then
-                TweenService:Create(v, TweenInfo.new(0.15), {
-                    TextTransparency = 1
-                }):Play()
-            elseif v:IsA("ImageLabel") then
-                TweenService:Create(v, TweenInfo.new(0.15), {
-                    ImageTransparency = 1
-                }):Play()
-            end
-        end
-
-        tween.Completed:Wait()
-        gui:Destroy()
-    end)
-end
--- ========== END DONATION POPUP ==========
-
-local COLORS = {
-    IDLE = Color3.fromRGB(34, 214, 78),
-    HOVER = Color3.fromRGB(42, 232, 90),
-}
-
-local TWEEN_SPEED = TweenInfo.new(
-    0.045,
-    Enum.EasingStyle.Quad,
-    Enum.EasingDirection.Out
-)
-
-local OVERLAY_RESCAN_INTERVAL = 0.05
-
-local LastPrompt = {
-    Id = nil,
-    Type = nil,
-    Nonce = 0,
-    Price = 0
-}
-
-local function getSettings()
-    local ok, envSettings = pcall(function()
-        return getgenv().Settings
-    end)
-
-    if not ok or type(envSettings) ~= "table" then
-        return {}
-    end
-
-    return envSettings
-end
-
-local RuntimeState = nil
-
-pcall(function()
-    local env = type(getgenv) == "function" and getgenv() or nil
-
-    if type(env) == "table" then
-        env.__FreeGamepassRuntime =
-            env.__FreeGamepassRuntime or {
-                runId = 0,
-                connections = {}
-            }
-
-        for _, conn in ipairs(env.__FreeGamepassRuntime.connections) do
-            pcall(function()
-                if conn and conn.Disconnect then
-                    conn:Disconnect()
-                end
-            end)
-        end
-
-        env.__FreeGamepassRuntime.connections = {}
-        env.__FreeGamepassRuntime.runId += 1
-
-        RuntimeState = env.__FreeGamepassRuntime
-    end
-end)
-
-local CURRENT_RUN_ID =
-    RuntimeState and RuntimeState.runId or os.clock()
-
-local ParentButtonState = setmetatable({}, {
-    __mode = "k"
-})
-
-local ScriptConnections =
-    RuntimeState and RuntimeState.connections or {}
-
-local function isCurrentRun()
-    return not RuntimeState or
-        RuntimeState.runId == CURRENT_RUN_ID
-end
-
-local function trackConnection(conn)
-    if conn then
-        table.insert(ScriptConnections, conn)
-    end
-
-    return conn
-end
-
-local function toggleRobloxMenu()
-    pcall(function()
-        GuiService:SetMenuIsOpen(true)
-        GuiService:SetMenuIsOpen(false)
-    end)
-end
-
-local function applyVisualState(root, color)
-    local props = {
-        BackgroundColor3 = color
     }
-
-    if root:IsA("ImageButton") then
-        props.ImageColor3 = color
+    
+    if data then
+        options.Body = HttpService:JSONEncode(data)
     end
-
-    TweenService:Create(root, TWEEN_SPEED, props):Play()
-
-    for _, desc in ipairs(root:GetDescendants()) do
-        if desc:IsA("ImageLabel")
-        or desc:IsA("ImageButton")
-        or desc:IsA("Frame") then
-
-            local p = {
-                BackgroundColor3 = color
-            }
-
-            if desc:IsA("ImageLabel")
-            or desc:IsA("ImageButton") then
-                p.ImageColor3 = color
-            end
-
-            TweenService:Create(desc, TWEEN_SPEED, p):Play()
+    
+    local success, response = pcall(function()
+        return HttpService:RequestAsync(options)
+    end)
+    
+    if success and response.Success then
+        local body = response.Body
+        if body and body ~= "null" then
+            return HttpService:JSONDecode(body)
         end
+    end
+    
+    return nil
+end
+
+function Firebase:verifyKey(key)
+    return self:request("keys/" .. key)
+end
+
+function Firebase:updateKeyUsage(key, hwid)
+    local data = {
+        hwid = hwid,
+        hwidLocked = true,
+        lastUsed = os.time()
+    }
+    
+    -- Update key data
+    self:request("keys/" .. key, "PATCH", data)
+    
+    -- Increment usage count
+    local keyData = self:verifyKey(key)
+    if keyData then
+        local uses = (keyData.uses or 0) + 1
+        self:request("keys/" .. key .. "/uses", "PUT", uses)
     end
 end
 
-local function getItemPrice(id, itemType)
-    local price = 0
-
-    if itemType == "GamePass" then
-        local ok, info = pcall(function()
-            return MarketplaceService:GetProductInfo(id, Enum.InfoType.GamePass)
-        end)
-        if ok and info then
-            price = info.PriceInRobux or 0
-        end
-    elseif itemType == "Asset" or itemType == "Product" then
-        local ok, info = pcall(function()
-            return MarketplaceService:GetProductInfo(id)
-        end)
-        if ok and info then
-            price = info.PriceInRobux or 0
-        end
-    end
-
-    return price
+function Firebase:saveUserData(hwid, key)
+    local data = {
+        hwid = hwid,
+        key = key,
+        lastLogin = os.time(),
+        gameId = game.PlaceId,
+        username = Players.LocalPlayer.Name
+    }
+    
+    self:request("users/" .. hwid, "PUT", data)
 end
 
-local function finishPurchase(id)
-    local price = LastPrompt.Price or 0
-
-    pcall(function()
-        if price and price > 0 then
-            createDonatePopup(price)
-        else
-            createDonatePopup(0)
-        end
-    end)
-
-    if LastPrompt.Type == "GamePass" then
-        pcall(function()
-            MarketplaceService:SignalPromptGamePassPurchaseFinished(
-                LocalPlayer.UserId,
-                id,
-                true
-            )
-        end)
-
-    elseif LastPrompt.Type == "Product" then
-        pcall(function()
-            MarketplaceService:SignalPromptProductPurchaseFinished(
-                LocalPlayer.UserId,
-                id,
-                true
-            )
-        end)
-
-    elseif LastPrompt.Type == "Asset" then
-        pcall(function()
-            MarketplaceService:SignalPromptPurchaseFinished(
-                LocalPlayer.UserId,
-                id,
-                true
-            )
-        end)
-
-    elseif LastPrompt.Type == "Bundle" then
-        pcall(function()
-            MarketplaceService:SignalPromptBundlePurchaseFinished(
-                LocalPlayer.UserId,
-                id,
-                true
-            )
-        end)
-    end
+function Firebase:getSettings()
+    return self:request("settings")
 end
 
-trackConnection(
-    MarketplaceService.PromptGamePassPurchaseRequested:Connect(function(p, id)
-        if p == LocalPlayer then
-            task.spawn(function()
-                local price = getItemPrice(id, "GamePass")
-                LastPrompt = {
-                    Id = id,
-                    Type = "GamePass",
-                    Price = price
-                }
-            end)
+-- ========== KEY VALIDATION ==========
+local function validateKey(key)
+    -- Check if maintenance mode
+    local settings = Firebase:getSettings()
+    if settings and settings.maintenanceMode then
+        return false, settings.maintenanceMessage or "Script is under maintenance."
+    end
+    
+    -- Verify key exists
+    local keyData = Firebase:verifyKey(key)
+    if not keyData then
+        return false, "Invalid key. Please check and try again."
+    end
+    
+    -- Check if banned
+    if keyData.banned then
+        return false, "This key has been banned."
+    end
+    
+    -- Check expiry
+    if keyData.expiryTime and keyData.expiryTime < os.time() then
+        return false, "This key has expired. Please get a new one."
+    end
+    
+    -- Check usage limits
+    if keyData.maxUses and keyData.maxUses > 0 then
+        if keyData.uses and keyData.uses >= keyData.maxUses then
+            return false, "This key has reached its maximum usage limit."
         end
-    end)
-)
-
-trackConnection(
-    MarketplaceService.PromptProductPurchaseRequested:Connect(function(p, id)
-        if p == LocalPlayer then
-            task.spawn(function()
-                local price = getItemPrice(id, "Product")
-                LastPrompt = {
-                    Id = id,
-                    Type = "Product",
-                    Price = price
-                }
-            end)
+    end
+    
+    -- Check HWID lock
+    local hwid = getHWID()
+    if keyData.hwidLocked and keyData.hwid and keyData.hwid ~= "" then
+        if keyData.hwid ~= hwid then
+            return false, "This key is locked to a different device."
         end
-    end)
-)
-
-trackConnection(
-    MarketplaceService.PromptPurchaseRequested:Connect(function(p, id)
-        if p == LocalPlayer then
-            task.spawn(function()
-                local price = getItemPrice(id, "Asset")
-                LastPrompt = {
-                    Id = id,
-                    Type = "Asset",
-                    Price = price
-                }
-            end)
-        end
-    end)
-)
-
-trackConnection(
-    MarketplaceService.PromptBundlePurchaseRequested:Connect(function(p, id)
-        if p == LocalPlayer then
-            LastPrompt = {
-                Id = id,
-                Type = "Bundle",
-                Price = 0
-            }
-        end
-    end)
-)
-
--- FIXED: Robux logo uses official built-in texture path, WHITE color, CLOSER to balance
-local function createRobuxLogo(parent, position)
-    local logo = Instance.new("ImageLabel")
-    logo.Name = "RobuxLogo"
-    logo.Size = UDim2.new(0, 20, 0, 20)
-    logo.Position = position
-    logo.BackgroundTransparency = 1
-    logo.Image = "rbxasset://textures/ui/common/robux@3x.png"
-    logo.ImageColor3 = Color3.fromRGB(255, 255, 255)  -- WHITE for visibility on dark backgrounds
-    logo.Parent = parent
-
-    return logo
+    end
+    
+    -- Update key usage and HWID
+    Firebase:updateKeyUsage(key, hwid)
+    Firebase:saveUserData(hwid, key)
+    
+    return true, "Key verified successfully!", keyData
 end
 
-local function applyBalanceSpoof(overlay)
-    local customBal = getSettings().CustomBalance
-
-    if not customBal or customBal == "" then
-        return
+-- ========== UI CREATION ==========
+local function createKeyUI()
+    local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+    
+    -- Remove existing UI
+    local oldUI = playerGui:FindFirstChild("KeySystemUI")
+    if oldUI then
+        oldUI:Destroy()
     end
-
-    local textLabels = {}
-
-    local function collectLabels(container)
-        for _, desc in ipairs(container:GetDescendants()) do
-            if desc:IsA("TextLabel") and desc.Visible and desc.Text ~= "" then
-                local absPos = desc.AbsolutePosition
-                table.insert(textLabels, {
-                    label = desc,
-                    x = absPos.X,
-                    y = absPos.Y
-                })
-            end
-        end
-    end
-
-    collectLabels(overlay)
-
-    table.sort(textLabels, function(a, b)
-        return a.x < b.x
-    end)
-
-    local balanceLabels = {}
-    local buttonLabels = {}
-
-    for _, item in ipairs(textLabels) do
-        local text = item.label.Text
-        if text:match("%d+['%,]?%d+") or text:match("^%d+$") and #text > 3 then
-            table.insert(balanceLabels, item)
-        end
-        if text:lower():find("buy") or text:lower():find("purchase") or text:lower():find("get") then
-            table.insert(buttonLabels, item)
-        end
-    end
-
-    table.sort(balanceLabels, function(a, b) return a.x > b.x end)
-    table.sort(buttonLabels, function(a, b) return a.x < b.x end)
-
-    if #buttonLabels > 0 then
-        local buyButtonLabel = buttonLabels[1].label
-        buyButtonLabel.Text = "Buy item"
-        trackConnection(
-            buyButtonLabel:GetPropertyChangedSignal("Text"):Connect(function()
-                if buyButtonLabel.Text ~= "Buy item" then
-                    buyButtonLabel.Text = "Buy item"
-                end
-            end)
-        )
-    end
-
-    if #balanceLabels > 0 then
-        local balanceLabel = balanceLabels[1].label
-        local balanceParent = balanceLabel.Parent
-        local labelPos = balanceLabel.Position
-
-        -- FIXED: Logo positioned much closer to balance text (only 4px gap instead of 25px)
-        local logo = balanceParent:FindFirstChild("RobuxLogo")
-        if not logo then
-            logo = createRobuxLogo(balanceParent, UDim2.new(
-                labelPos.X.Scale, 
-                labelPos.X.Offset - 22,  -- CLOSER: was -25, now -22
-                labelPos.Y.Scale, 
-                labelPos.Y.Offset + 1      -- CLOSER vertical alignment
-            ))
-        end
-
-        trackConnection(
-            balanceLabel:GetPropertyChangedSignal("Position"):Connect(function()
-                if logo and logo.Parent then
-                    local newPos = balanceLabel.Position
-                    logo.Position = UDim2.new(
-                        newPos.X.Scale, 
-                        newPos.X.Offset - 22,  -- CLOSER
-                        newPos.Y.Scale, 
-                        newPos.Y.Offset + 1
-                    )
-                end
-            end)
-        )
-
-        balanceLabel.Text = customBal
-        trackConnection(
-            balanceLabel:GetPropertyChangedSignal("Text"):Connect(function()
-                if balanceLabel.Text ~= customBal then
-                    balanceLabel.Text = customBal
-                end
-            end)
-        )
-    end
-
-    trackConnection(
-        overlay.DescendantAdded:Connect(function(newDesc)
-            task.wait(0.1)
-            if newDesc:IsA("TextLabel") and newDesc.Visible then
-                local absPos = newDesc.AbsolutePosition
-                local text = newDesc.Text
-
-                if absPos.X > 500 and (text:match("%d+['%,]?%d+") or text:match("^%d+$") and #text > 3) then
-                    local balanceParent = newDesc.Parent
-                    local labelPos = newDesc.Position
-
-                    -- FIXED: Closer positioning for dynamically added labels too
-                    local logo = balanceParent:FindFirstChild("RobuxLogo")
-                    if not logo then
-                        logo = createRobuxLogo(balanceParent, UDim2.new(
-                            labelPos.X.Scale, 
-                            labelPos.X.Offset - 22,
-                            labelPos.Y.Scale, 
-                            labelPos.Y.Offset + 1
-                        ))
-                    end
-
-                    trackConnection(
-                        newDesc:GetPropertyChangedSignal("Position"):Connect(function()
-                            if logo and logo.Parent then
-                                local newPos = newDesc.Position
-                                logo.Position = UDim2.new(
-                                    newPos.X.Scale, 
-                                    newPos.X.Offset - 22,
-                                    newPos.Y.Scale, 
-                                    newPos.Y.Offset + 1
-                                )
-                            end
-                        end)
-                    )
-
-                    newDesc.Text = customBal
-                    trackConnection(
-                        newDesc:GetPropertyChangedSignal("Text"):Connect(function()
-                            if newDesc.Text ~= customBal then
-                                newDesc.Text = customBal
-                            end
-                        end)
-                    )
-                end
-
-                if absPos.X < 500 and (text:lower():find("buy") or text:lower():find("purchase")) then
-                    newDesc.Text = "Buy item"
-                    trackConnection(
-                        newDesc:GetPropertyChangedSignal("Text"):Connect(function()
-                            if newDesc.Text ~= "Buy item" then
-                                newDesc.Text = "Buy item"
-                            end
-                        end)
-                    )
-                end
-            end
+    
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "KeySystemUI"
+    screenGui.IgnoreGuiInset = true
+    screenGui.ResetOnSpawn = false
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.Parent = playerGui
+    
+    -- Background overlay
+    local background = Instance.new("Frame")
+    background.Name = "Background"
+    background.Size = UDim2.new(1, 0, 1, 0)
+    background.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    background.BackgroundTransparency = 0.7
+    background.Parent = screenGui
+    
+    -- Main frame
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = UDim2.new(0, 400, 0, 300)
+    mainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Parent = screenGui
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = mainFrame
+    
+    -- Gradient accent at top
+    local accentBar = Instance.new("Frame")
+    accentBar.Name = "AccentBar"
+    accentBar.Size = UDim2.new(1, 0, 0, 4)
+    accentBar.BackgroundColor3 = Color3.fromRGB(49, 93, 254)
+    accentBar.BorderSizePixel = 0
+    accentBar.Parent = mainFrame
+    
+    local accentCorner = Instance.new("UICorner")
+    accentCorner.CornerRadius = UDim.new(0, 12)
+    accentCorner.Parent = accentBar
+    
+    -- Fix bottom corners
+    local accentFix = Instance.new("Frame")
+    accentFix.Size = UDim2.new(1, 0, 0, 8)
+    accentFix.Position = UDim2.new(0, 0, 1, -8)
+    accentFix.BackgroundColor3 = Color3.fromRGB(49, 93, 254)
+    accentFix.BorderSizePixel = 0
+    accentFix.Parent = accentBar
+    
+    -- Title
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "TitleLabel"
+    titleLabel.Size = UDim2.new(1, 0, 0, 60)
+    titleLabel.Position = UDim2.new(0, 0, 0, 20)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextSize = 28
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.Text = CONFIG.scriptName
+    titleLabel.Parent = mainFrame
+    
+    -- Version label
+    local versionLabel = Instance.new("TextLabel")
+    versionLabel.Name = "VersionLabel"
+    versionLabel.Size = UDim2.new(1, 0, 0, 20)
+    versionLabel.Position = UDim2.new(0, 0, 0, 75)
+    versionLabel.BackgroundTransparency = 1
+    versionLabel.Font = Enum.Font.Gotham
+    versionLabel.TextSize = 12
+    versionLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+    versionLabel.Text = "v" .. CONFIG.scriptVersion
+    versionLabel.Parent = mainFrame
+    
+    -- Key input
+    local keyInput = Instance.new("Frame")
+    keyInput.Name = "KeyInput"
+    keyInput.Size = UDim2.new(0, 320, 0, 45)
+    keyInput.Position = UDim2.new(0.5, -160, 0, 115)
+    keyInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    keyInput.BorderSizePixel = 0
+    keyInput.Parent = mainFrame
+    
+    local inputCorner = Instance.new("UICorner")
+    inputCorner.CornerRadius = UDim.new(0, 8)
+    inputCorner.Parent = keyInput
+    
+    local keyTextBox = Instance.new("TextBox")
+    keyTextBox.Name = "KeyTextBox"
+    keyTextBox.Size = UDim2.new(1, -20, 1, 0)
+    keyTextBox.Position = UDim2.new(0, 10, 0, 0)
+    keyTextBox.BackgroundTransparency = 1
+    keyTextBox.Font = Enum.Font.GothamBold
+    keyTextBox.TextSize = 16
+    keyTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    keyTextBox.PlaceholderText = CONFIG.keyPlaceholder
+    keyTextBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+    keyTextBox.Text = ""
+    keyTextBox.TextXAlignment = Enum.TextXAlignment.Center
+    keyTextBox.Parent = keyInput
+    
+    -- Verify button
+    local verifyButton = Instance.new("TextButton")
+    verifyButton.Name = "VerifyButton"
+    verifyButton.Size = UDim2.new(0, 320, 0, 40)
+    verifyButton.Position = UDim2.new(0.5, -160, 0, 175)
+    verifyButton.BackgroundColor3 = Color3.fromRGB(49, 93, 254)
+    verifyButton.BorderSizePixel = 0
+    verifyButton.Font = Enum.Font.GothamBold
+    verifyButton.TextSize = 16
+    verifyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    verifyButton.Text = "VERIFY KEY"
+    verifyButton.Parent = mainFrame
+    
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 8)
+    buttonCorner.Parent = verifyButton
+    
+    -- Status message
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Name = "StatusLabel"
+    statusLabel.Size = UDim2.new(1, -40, 0, 30)
+    statusLabel.Position = UDim2.new(0, 20, 0, 235)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Font = Enum.Font.Gotham
+    statusLabel.TextSize = 13
+    statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    statusLabel.Text = ""
+    statusLabel.TextWrapped = true
+    statusLabel.Parent = mainFrame
+    
+    -- Discord link (optional)
+    if CONFIG.developerDiscord then
+        local discordButton = Instance.new("TextButton")
+        discordButton.Name = "DiscordButton"
+        discordButton.Size = UDim2.new(0, 150, 0, 20)
+        discordButton.Position = UDim2.new(0.5, -75, 0, 270)
+        discordButton.BackgroundTransparency = 1
+        discordButton.Font = Enum.Font.Gotham
+        discordButton.TextSize = 11
+        discordButton.TextColor3 = Color3.fromRGB(100, 150, 255)
+        discordButton.Text = "Get Key | Discord Server"
+        discordButton.Parent = mainFrame
+        
+        discordButton.MouseButton1Click:Connect(function()
+            setclipboard(CONFIG.developerDiscord)
+            statusLabel.Text = "Discord link copied to clipboard!"
+            statusLabel.TextColor3 = Color3.fromRGB(100, 150, 255)
+            task.wait(3)
+            statusLabel.Text = ""
         end)
-    )
-end
-
-local function destroyOriginalButton(btn)
-    pcall(function()
-        btn.Visible = false
-        btn.Size = UDim2.new(0, 0, 0, 0)
-        btn.BackgroundTransparency = 1
-
-        if btn:IsA("ImageButton") then
-            btn.ImageTransparency = 1
-        end
-
-        btn.Interactable = false
-        btn.Active = false
-
-        for _, v in ipairs(btn:GetDescendants()) do
-            if v:IsA("TextLabel") then
-                v.Text = ""
-                v.TextTransparency = 1
-
-            elseif v:IsA("GuiObject") then
-                v.BackgroundTransparency = 1
-            end
-        end
-
-        trackConnection(
-            btn:GetPropertyChangedSignal("Visible"):Connect(function()
-                if btn.Visible then
-                    btn.Visible = false
-                end
-            end)
-        )
+    end
+    
+    -- Button effects
+    verifyButton.MouseEnter:Connect(function()
+        TweenService:Create(verifyButton, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(72, 112, 255)
+        }):Play()
     end)
-end
-
-local function decorateButton(btn, text)
-    btn.Visible = true
-    btn.Active = true
-    btn.AutoButtonColor = false
-    btn.BackgroundColor3 = COLORS.IDLE
-    btn.BackgroundTransparency = 0.1
-
-    if btn:IsA("ImageButton") then
-        btn.ImageColor3 = COLORS.IDLE
-        btn.ImageTransparency = 0
-    end
-
-    pcall(function()
-        btn.Interactable = true
+    
+    verifyButton.MouseLeave:Connect(function()
+        TweenService:Create(verifyButton, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(49, 93, 254)
+        }):Play()
     end)
-
-    for _, desc in ipairs(btn:GetDescendants()) do
-        if desc:IsA("LocalScript")
-        or desc:IsA("Script") then
-
-            desc:Destroy()
-
-        elseif desc:IsA("GuiObject") then
-            desc.Active = true
-
-            pcall(function()
-                desc.Interactable = true
-            end)
-
-            if desc:IsA("TextLabel")
-            or desc:IsA("TextButton") then
-
-                desc.Text = text
-                desc.TextTransparency = 0
-            end
-        end
-    end
-end
-
-local function processParentButtons(parent)
-    if not parent then
-        return
-    end
-
-    local state = ParentButtonState[parent] or {}
-    ParentButtonState[parent] = state
-
-    if state.Injecting then
-        return
-    end
-
-    state.Injecting = true
-
-    task.spawn(function()
-        local template = state.TemplateButton
-
-        if not template or template.Parent ~= parent then
-            state.Injecting = false
+    
+    -- Verify button click
+    verifyButton.MouseButton1Click:Connect(function()
+        local key = keyTextBox.Text:gsub("%s", "") -- Remove spaces
+        
+        if key == "" then
+            statusLabel.Text = "⚠ Please enter a key"
+            statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
             return
         end
-
-        if not parent:FindFirstChild("FreeButton") then
-            local freeBtn = template:Clone()
-
-            freeBtn.Name = "FreeButton"
-            freeBtn.Parent = parent
-
-            if parent:FindFirstChildOfClass("UIListLayout") then
-                freeBtn.LayoutOrder =
-                    template.LayoutOrder or 0
-            else
-                freeBtn.Position = template.Position
-
-                trackConnection(
-                    template:GetPropertyChangedSignal("Position"):Connect(function()
-                        freeBtn.Position = template.Position
-                    end)
-                )
-            end
-
-            decorateButton(freeBtn, "Buy")
-            destroyOriginalButton(template)
-
-            freeBtn.MouseEnter:Connect(function()
-                applyVisualState(
-                    freeBtn,
-                    COLORS.HOVER
-                )
-            end)
-
-            freeBtn.MouseLeave:Connect(function()
-                applyVisualState(
-                    freeBtn,
-                    COLORS.IDLE
-                )
-            end)
-
-            freeBtn.Activated:Connect(function()
-                if not LastPrompt.Id then
-                    return
-                end
-
-                applyVisualState(
-                    freeBtn,
-                    COLORS.HOVER
-                )
-
-                local price = LastPrompt.Price or 0
-                if price and price > 0 then
-                    createDonatePopup(price)
-                else
-                    createDonatePopup(0)
-                end
-
-                finishPurchase(LastPrompt.Id)
-
-                applyVisualState(
-                    freeBtn,
-                    COLORS.IDLE
-                )
-
-                toggleRobloxMenu()
-            end)
+        
+        -- Show loading
+        verifyButton.Text = "VERIFYING..."
+        verifyButton.Interactable = false
+        statusLabel.Text = "Connecting to server..."
+        statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        
+        -- Verify key
+        local success, message, keyData = validateKey(key)
+        
+        if success then
+            -- Success animation
+            statusLabel.Text = "✅ " .. message
+            statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+            
+            verifyButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+            verifyButton.Text = "SUCCESS!"
+            
+            task.wait(1)
+            
+            -- Fade out UI
+            TweenService:Create(screenGui, TweenInfo.new(0.5), {
+                Enabled = false
+            }):Play()
+            
+            task.wait(0.5)
+            screenGui:Destroy()
+            
+            -- LOAD THE MAIN SCRIPT HERE
+            loadMainScript(keyData)
+        else
+            -- Error feedback
+            statusLabel.Text = "❌ " .. message
+            statusLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+            
+            verifyButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+            verifyButton.Text = "FAILED"
+            
+            task.wait(1.5)
+            
+            verifyButton.BackgroundColor3 = Color3.fromRGB(49, 93, 254)
+            verifyButton.Text = "VERIFY KEY"
+            verifyButton.Interactable = true
         end
+    end)
+    
+    -- Allow Enter key to submit
+    keyTextBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            verifyButton.MouseButton1Click:Fire()
+        end
+    end)
+    
+    return screenGui
+end
 
-        state.Injecting = false
+-- ========== LOAD MAIN SCRIPT ==========
+function loadMainScript(keyData)
+    print("Key verified! Type: " .. (keyData and keyData.type or "standard"))
+    print("Loading main script...")
+    
+    -- LOAD YOUR ACTUAL SCRIPT HERE
+    -- This is where your original script loads
+    pcall(function()
+        loadstring(game:HttpGet("https://zyrtec.vercel.app/scripts/plsdonate.lua"))()
     end)
 end
 
-local function injectButtons(originalBtn)
-    if not originalBtn
-    or originalBtn.Name == "FreeButton" then
-        return
-    end
-
-    local parent = originalBtn.Parent
-
-    if not parent then
-        return
-    end
-
-    local state = ParentButtonState[parent] or {}
-
-    if not state.TemplateButton
-    or state.TemplateButton.Parent ~= parent then
-        state.TemplateButton = originalBtn
-    end
-
-    ParentButtonState[parent] = state
-
-    processParentButtons(parent)
-end
-
-local function scanActions(actionsFolder)
-    for _, child in ipairs(actionsFolder:GetChildren()) do
-        if tonumber(child.Name) then
-            for _, inner in ipairs(child:GetDescendants()) do
-                if inner:IsA("ImageButton") then
-                    injectButtons(inner)
-                end
-            end
+-- ========== INITIALIZE ==========
+-- Check if already verified (optional - for auto-login)
+local function checkExistingSession()
+    local hwid = getHWID()
+    local userData = Firebase:request("users/" .. hwid)
+    
+    if userData and userData.key then
+        -- Verify existing key
+        local success, message, keyData = validateKey(userData.key)
+        if success then
+            print("Auto-login successful!")
+            loadMainScript(keyData)
+            return true
         end
     end
+    
+    return false
 end
 
-local ProcessedOverlays = setmetatable({}, {
-    __mode = "k"
-})
-
-local function handleOverlay(child)
-    if child.Name ~= "FoundationOverlay" then
-        return
-    end
-
-    if ProcessedOverlays[child] then
-        return
-    end
-
-    ProcessedOverlays[child] = true
-
-    applyBalanceSpoof(child)
-
-    local function getActions()
-        local a = child:FindFirstChild("SafeAreaFrame")
-        a = a and a:FindFirstChild("OverlayPortal")
-        a = a and a:FindFirstChild("SheetContainer")
-        a = a and a:FindFirstChild("Frame")
-        a = a and a:FindFirstChild("Sheet")
-        a = a and a:FindFirstChild("Content")
-        a = a and a:FindFirstChild("Actions")
-
-        return a or child:FindFirstChild("Actions", true)
-    end
-
-    local conn
-
-    conn = trackConnection(
-        child.DescendantAdded:Connect(function()
-            if not isCurrentRun() then
-                conn:Disconnect()
-                return
-            end
-
-            local actions = getActions()
-
-            if actions then
-                scanActions(actions)
-            end
-        end)
-    )
-end
-
-trackConnection(
-    CoreGui.DescendantAdded:Connect(handleOverlay)
-)
-
-for _, child in ipairs(CoreGui:GetDescendants()) do
-    task.spawn(handleOverlay, child)
-end
-
+-- Start the key system
 task.spawn(function()
-    while isCurrentRun() do
-        for _, child in ipairs(CoreGui:GetDescendants()) do
-            if child:IsA("ScreenGui")
-            and child.Name == "FoundationOverlay" then
-
-                local a = child:FindFirstChild("Actions", true)
-
-                if a then
-                    scanActions(a)
-                end
-            end
-        end
-
-        task.wait(OVERLAY_RESCAN_INTERVAL)
+    -- Try auto-login first
+    local autoLoginSuccess = checkExistingSession()
+    
+    if not autoLoginSuccess then
+        -- Show key input UI
+        createKeyUI()
     end
 end)
